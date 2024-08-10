@@ -13,9 +13,6 @@ linters-settings:
     check-blank: true
   exhaustive:
     default-signifies-exhaustive: true
-  exhaustruct:
-    exclude:
-      - '.+/cobra\.Command$'
   gci:
     sections:
       - standard
@@ -70,6 +67,7 @@ linters:
   enable-all: true
   disable:
     - depguard
+    - exhaustruct
     - execinquery
     - gomnd
 
@@ -82,7 +80,3 @@ issues:
         - errcheck
         - gocyclo
         - gosec
-    - path: cmd/.*\.go
-      linters:
-        - gochecknoglobals
-        - gochecknoinits
