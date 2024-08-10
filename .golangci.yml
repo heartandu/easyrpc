@@ -1,0 +1,65 @@
+run:
+  timeout: 2m
+
+output:
+  formats:
+    - format: colored-line-number
+
+linters-settings:
+  dupl:
+    threshold: 100
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  exhaustive:
+    default-signifies-exhaustive: true
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/heartandu/easyrpc)
+  gocognit:
+    min-complexity: 20
+  goconst:
+    min-occurrences: 2
+    ignore-tests: true
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+      - opinionated
+  gocyclo:
+    min-complexity: 20
+  goimports:
+    local-prefixes: github.com/heartandu/easyrpc
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+  nlreturn:
+    block-size: 2
+  revive:
+    ignore-generated-header: true
+    enable-all-rules: true
+  tagalign:
+    sort: false
+  testifylint:
+    enable-all: true
+
+linters:
+  enable-all: true
+  disable:
+    - execinquery
+    - gomnd
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - dupl
+        - err113
+        - errcheck
+        - gocyclo
+        - gosec
