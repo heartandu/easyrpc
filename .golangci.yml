@@ -13,6 +13,9 @@ linters-settings:
     check-blank: true
   exhaustive:
     default-signifies-exhaustive: true
+  exhaustruct:
+    exclude:
+      - '.+/cobra\.Command$'
   gci:
     sections:
       - standard
@@ -43,6 +46,21 @@ linters-settings:
   revive:
     ignore-generated-header: true
     enable-all-rules: true
+    rules:
+      - name: line-length-limit
+        arguments: [120]
+      - name: deep-exit
+        disabled: true
+      - name: add-constant
+        arguments:
+          - maxLitCount: "3"
+            allowStrs: '""'
+            allowInts: "0,1,2"
+            allowFloats: "0.0,0.,1.0,1.,2.0,2."
+      - name: unhandled-error
+        arguments:
+          - fmt.Fprintln
+          - fmt.Fprintf
   tagalign:
     sort: false
   testifylint:
@@ -51,6 +69,7 @@ linters-settings:
 linters:
   enable-all: true
   disable:
+    - depguard
     - execinquery
     - gomnd
 
@@ -63,3 +82,7 @@ issues:
         - errcheck
         - gocyclo
         - gosec
+    - path: cmd/.*\.go
+      linters:
+        - gochecknoglobals
+        - gochecknoinits
