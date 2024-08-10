@@ -52,11 +52,25 @@ func (a *App) Run() error {
 func (a *App) bindPFlags() {
 	a.pflags.StringVar(&a.cfgFile, "config", "", "config file (default is $HOME/.easyrpc.yaml or ./.easyrpc.yaml)")
 	a.pflags.StringP("address", "a", "", `remote host address in format "host:port" or "host:port/prefix"`)
+	a.pflags.StringSliceP(
+		"import-path",
+		"i",
+		nil,
+		"proto import path, can provide multiple paths by repeating the flag",
+	)
+	a.pflags.StringSliceP(
+		"proto-file",
+		"p",
+		nil,
+		"proto files to use, can provide multiple files by repeating the flag",
+	)
 }
 
 // bindPFlagsToConfig binds application global flags to configuration structure.
 func (a *App) bindPFlagsToConfig() {
-	a.viper.BindPFlag("server.address", a.pflags.Lookup("address")) //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("server.address", a.pflags.Lookup("address"))         //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("proto.import_paths", a.pflags.Lookup("import-path")) //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("proto.proto_files", a.pflags.Lookup("proto-file"))   //nolint:errcheck // viper flag bind
 }
 
 // registerCommands adds all application commands to the root one.
