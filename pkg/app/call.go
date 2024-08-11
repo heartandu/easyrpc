@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"github.com/heartandu/easyrpc/format"
+	"github.com/heartandu/easyrpc/pkg/format"
 	"github.com/heartandu/easyrpc/pkg/descriptor"
 	"github.com/heartandu/easyrpc/pkg/usecase"
 )
