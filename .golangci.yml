@@ -86,4 +86,5 @@ issues:
         - gosec
         - lll
         - revive
+        - varnamelen
         - wrapcheck

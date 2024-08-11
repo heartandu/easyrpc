@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
@@ -13,6 +15,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"github.com/heartandu/easyrpc/fs"
 )
 
 // ErrSymbolNotFound is returned when a symbol is not found in the protocol buffer files.
@@ -37,6 +41,14 @@ func ProtoFilesSource(ctx context.Context, importPaths, protoFiles []string) (So
 	comp := &protocompile.Compiler{
 		Resolver: protocompile.WithStandardImports(&protocompile.SourceResolver{
 			ImportPaths: importPaths,
+			Accessor: func(path string) (io.ReadCloser, error) {
+				p, err := fs.ExpandHome(path)
+				if err != nil {
+					return nil, fmt.Errorf("failed to expand home: %w", err)
+				}
+
+				return os.Open(p)
+			},
 		}),
 	}
 
