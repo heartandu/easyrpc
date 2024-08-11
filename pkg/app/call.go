@@ -1,7 +1,6 @@
 package app
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -20,13 +19,13 @@ func (a *App) registerCallCmd() {
 				return ErrMissingArgs
 			}
 
-			data, err := cmd.Flags().GetString("data")
+			input, err := handleDataFlag(cmd)
 			if err != nil {
-				return fmt.Errorf("failed to get data flag: %w", err)
+				return fmt.Errorf("failed to handle data flag: %w", err)
 			}
 
 			cc := usecase.NewCall(os.Stdout)
-			if err := cc.MakeRPCCall(context.Background(), &a.cfg, args[0], bytes.NewReader([]byte(data))); err != nil {
+			if err := cc.MakeRPCCall(context.Background(), &a.cfg, args[0], input); err != nil {
 				return fmt.Errorf("call rpc failed: %w", err)
 			}
 
@@ -34,7 +33,7 @@ func (a *App) registerCallCmd() {
 		},
 	}
 
-	cmd.Flags().StringP("data", "d", "", "request data in json format")
+	registerDataFlag(cmd)
 
 	a.cmd.AddCommand(cmd)
 }

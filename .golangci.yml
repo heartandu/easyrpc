@@ -54,6 +54,8 @@ linters-settings:
             allowStrs: '""'
             allowInts: "0,1,2"
             allowFloats: "0.0,0.,1.0,1.,2.0,2."
+      - name: cognitive-complexity
+        arguments: [20]
       - name: unhandled-error
         arguments:
           - fmt.Fprintln

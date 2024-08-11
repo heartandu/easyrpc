@@ -28,6 +28,7 @@ func NewApp() *App {
 		Short: "An easy gRPC client",
 		Long: `easyrpc is a CLI and REPL uitility to make gRPC or gRPC-Web calls.
 The main purpose of this utility is for manual API testing.`,
+		SilenceUsage: true,
 	}
 
 	return &App{

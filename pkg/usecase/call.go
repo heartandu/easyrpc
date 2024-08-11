@@ -31,7 +31,7 @@ func NewCall(output io.Writer) *Call {
 }
 
 // MakeRPCCall makes an RPC call using the provided configuration and method name.
-func (c *Call) MakeRPCCall(ctx context.Context, cfg *config.Config, methodName string, rawRequest io.Reader) error {
+func (c *Call) MakeRPCCall(ctx context.Context, cfg *config.Config, methodName string, rawRequest io.ReadCloser) error {
 	fd, err := findDescriptor(ctx, cfg.Proto.ImportPaths, cfg.Proto.ProtoFiles, methodName)
 	if err != nil {
 		return fmt.Errorf("compile proto failed: %w", err)
@@ -95,7 +95,9 @@ func findDescriptor(ctx context.Context, importPaths, files []string, fqn string
 	return nil, ErrDescriptorNotFound
 }
 
-func makeRequest(rpc protoreflect.MethodDescriptor, rawRequest io.Reader) (*dynamicpb.Message, error) {
+func makeRequest(rpc protoreflect.MethodDescriptor, rawRequest io.ReadCloser) (*dynamicpb.Message, error) {
+	defer rawRequest.Close()
+
 	req := dynamicpb.NewMessage(rpc.Input())
 
 	var rawJSON json.RawMessage
