@@ -59,14 +59,12 @@ func (c *Call) MakeRPCCall(ctx context.Context, methodName string, rawRequest io
 		return fmt.Errorf("failed to make request: %w", err)
 	}
 
-	parts := strings.Split(string(rpc.FullName()), ".")
-	if len(parts) < 2 {
-		return ErrInvalidFQN
+	reqStr, err := toRequestString(rpc)
+	if err != nil {
+		return fmt.Errorf("failed to convert method name:: %w", err)
 	}
 
-	fqn := fmt.Sprintf("/%s/%s", strings.Join(parts[:len(parts)-1], "."), parts[len(parts)-1])
-
-	if err = c.cc.Invoke(ctx, fqn, req, resp); err != nil {
+	if err = c.cc.Invoke(ctx, reqStr, req, resp); err != nil {
 		return fmt.Errorf("failed to invoke rpc: %w", err)
 	}
 
@@ -103,4 +101,15 @@ func (c *Call) makeRequest(rpc protoreflect.MethodDescriptor, rawRequest io.Read
 	}
 
 	return msg, nil
+}
+
+func toRequestString(rpc protoreflect.MethodDescriptor) (string, error) {
+	const minParts = 2
+
+	parts := strings.Split(string(rpc.FullName()), ".")
+	if len(parts) < minParts {
+		return "", ErrInvalidFQN
+	}
+
+	return fmt.Sprintf("/%s/%s", strings.Join(parts[:len(parts)-1], "."), parts[len(parts)-1]), nil
 }
