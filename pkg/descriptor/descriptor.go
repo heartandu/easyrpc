@@ -100,7 +100,9 @@ func (s *serverReflectionSource) FindSymbol(name string) (protoreflect.Descripto
 	}
 
 	if d := fd.FindSymbol(name); d != nil {
-		return d.GetFile().Unwrap(), nil
+		if wr, ok := d.(desc.DescriptorWrapper); ok {
+			return wr.Unwrap(), nil
+		}
 	}
 
 	return nil, ErrSymbolNotFound

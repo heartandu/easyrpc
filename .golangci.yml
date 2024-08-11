@@ -81,5 +81,9 @@ issues:
         - dupl
         - err113
         - errcheck
+        - forcetypeassert
         - gocyclo
         - gosec
+        - lll
+        - revive
+        - wrapcheck

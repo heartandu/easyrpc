@@ -2,3 +2,4 @@
 .vscode
 bin
 *.iml
+.easyrpc.yaml

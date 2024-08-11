@@ -65,11 +65,13 @@ func (a *App) bindPFlags() {
 		nil,
 		"proto files to use, can provide multiple files by repeating the flag",
 	)
+	a.pflags.BoolP("reflection", "r", false, "use server reflection to make requests")
 }
 
 // bindPFlagsToConfig binds application global flags to configuration structure.
 func (a *App) bindPFlagsToConfig() {
 	a.viper.BindPFlag("server.address", a.pflags.Lookup("address"))         //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("server.reflection", a.pflags.Lookup("reflection"))   //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("proto.import_paths", a.pflags.Lookup("import-path")) //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("proto.proto_files", a.pflags.Lookup("proto-file"))   //nolint:errcheck // viper flag bind
 }

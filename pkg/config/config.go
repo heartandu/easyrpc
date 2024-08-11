@@ -14,5 +14,6 @@ type Proto struct {
 
 // Server represents a configuration of a remote server connection.
 type Server struct {
-	Address string
+	Address    string
+	Reflection bool
 }

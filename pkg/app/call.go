@@ -31,17 +31,23 @@ func (a *App) registerCallCmd() {
 
 			ctx := context.Background()
 
-			descSrc, err := descriptor.ProtoFilesSource(ctx, a.cfg.Proto.ImportPaths, a.cfg.Proto.ProtoFiles)
-			if err != nil {
-				return fmt.Errorf("failed to create descriptor source: %w", err)
-			}
-
 			clientConn, err := grpc.NewClient(
 				a.cfg.Server.Address,
 				grpc.WithTransportCredentials(insecure.NewCredentials()),
 			)
 			if err != nil {
 				return fmt.Errorf("failed to create grpc client connection: %w", err)
+			}
+
+			var descSrc descriptor.Source
+			if a.cfg.Server.Reflection {
+				descSrc, err = descriptor.ReflectionSource(ctx, clientConn)
+			} else {
+				descSrc, err = descriptor.ProtoFilesSource(ctx, a.cfg.Proto.ImportPaths, a.cfg.Proto.ProtoFiles)
+			}
+
+			if err != nil {
+				return fmt.Errorf("failed to create descriptor source: %w", err)
 			}
 
 			rp := format.JSONRequestParser(input, protojson.UnmarshalOptions{})
