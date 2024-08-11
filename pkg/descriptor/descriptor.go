@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"github.com/heartandu/easyrpc/fs"
+	"github.com/heartandu/easyrpc/pkg/fs"
 )
 
 // ErrSymbolNotFound is returned when a symbol is not found in the protocol buffer files.

@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/heartandu/easyrpc/fs"
+	"github.com/heartandu/easyrpc/pkg/fs"
 )
 
 func TestExpandHome(t *testing.T) {
