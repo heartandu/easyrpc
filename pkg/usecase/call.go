@@ -2,44 +2,50 @@ package usecase
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
 
-	"github.com/bufbuild/protocompile"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
 
-	"github.com/heartandu/easyrpc/pkg/config"
+	"github.com/heartandu/easyrpc/format"
+	"github.com/heartandu/easyrpc/pkg/descriptor"
 )
 
 // Call represents a use case for making RPC calls.
 type Call struct {
 	output io.Writer
+	ds     descriptor.Source
+	cc     grpc.ClientConnInterface
+	rp     format.RequestParser
+	rf     format.ResponseFormatter
 }
 
 // NewCall returns a new instance of Call.
-func NewCall(output io.Writer) *Call {
+func NewCall(
+	output io.Writer,
+	descSrc descriptor.Source,
+	clientConn grpc.ClientConnInterface,
+	reqParser format.RequestParser,
+	respFormatter format.ResponseFormatter,
+) *Call {
 	return &Call{
 		output: output,
+		ds:     descSrc,
+		cc:     clientConn,
+		rp:     reqParser,
+		rf:     respFormatter,
 	}
 }
 
 // MakeRPCCall makes an RPC call using the provided configuration and method name.
-func (c *Call) MakeRPCCall(ctx context.Context, cfg *config.Config, methodName string, rawRequest io.ReadCloser) error {
-	fd, err := findDescriptor(ctx, cfg.Proto.ImportPaths, cfg.Proto.ProtoFiles, methodName)
+func (c *Call) MakeRPCCall(ctx context.Context, methodName string, rawRequest io.ReadCloser) error {
+	rpc, err := c.findMethod(methodName)
 	if err != nil {
-		return fmt.Errorf("compile proto failed: %w", err)
-	}
-
-	rpc, ok := fd.(protoreflect.MethodDescriptor)
-	if !ok {
-		return ErrNotAMethod
+		return fmt.Errorf("failed to find method: %w", err)
 	}
 
 	if rpc.IsStreamingClient() || rpc.IsStreamingServer() {
@@ -48,14 +54,9 @@ func (c *Call) MakeRPCCall(ctx context.Context, cfg *config.Config, methodName s
 
 	resp := dynamicpb.NewMessage(rpc.Output())
 
-	req, err := makeRequest(rpc, rawRequest)
+	req, err := c.makeRequest(rpc, rawRequest)
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)
-	}
-
-	client, err := grpc.NewClient(cfg.Server.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return fmt.Errorf("failed to create grpc client: %w", err)
 	}
 
 	parts := strings.Split(string(rpc.FullName()), ".")
@@ -63,55 +64,43 @@ func (c *Call) MakeRPCCall(ctx context.Context, cfg *config.Config, methodName s
 		return ErrInvalidFQN
 	}
 
-	fqrn := fmt.Sprintf("/%s/%s", strings.Join(parts[:len(parts)-1], "."), parts[len(parts)-1])
+	fqn := fmt.Sprintf("/%s/%s", strings.Join(parts[:len(parts)-1], "."), parts[len(parts)-1])
 
-	if err := client.Invoke(ctx, fqrn, req, resp); err != nil {
+	if err = c.cc.Invoke(ctx, fqn, req, resp); err != nil {
 		return fmt.Errorf("failed to invoke rpc: %w", err)
 	}
 
-	fmt.Fprintf(c.output, "resp: %v\n", resp)
+	formattedResp, err := c.rf.Format(resp)
+	if err != nil {
+		return fmt.Errorf("failed to format response: %w", err)
+	}
+
+	fmt.Fprintf(c.output, "%v\n", formattedResp)
 
 	return nil
 }
 
-func findDescriptor(ctx context.Context, importPaths, files []string, fqn string) (protoreflect.Descriptor, error) {
-	comp := &protocompile.Compiler{
-		Resolver: protocompile.WithStandardImports(&protocompile.SourceResolver{
-			ImportPaths: importPaths,
-		}),
-	}
-
-	fds, err := comp.Compile(ctx, files...)
+func (c *Call) findMethod(methodName string) (protoreflect.MethodDescriptor, error) {
+	fd, err := c.ds.FindSymbol(methodName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to compile proto files: %w", err)
+		return nil, fmt.Errorf("failed to find symbol: %w", err)
 	}
 
-	for _, fd := range fds {
-		if desc := fd.FindDescriptorByName(protoreflect.FullName(fqn)); desc != nil {
-			return desc, nil
-		}
+	if rpc, ok := fd.(protoreflect.MethodDescriptor); ok {
+		return rpc, nil
 	}
 
-	return nil, ErrDescriptorNotFound
+	return nil, ErrNotAMethod
 }
 
-func makeRequest(rpc protoreflect.MethodDescriptor, rawRequest io.ReadCloser) (*dynamicpb.Message, error) {
+func (c *Call) makeRequest(rpc protoreflect.MethodDescriptor, rawRequest io.ReadCloser) (proto.Message, error) {
 	defer rawRequest.Close()
 
-	req := dynamicpb.NewMessage(rpc.Input())
+	msg := dynamicpb.NewMessage(rpc.Input())
 
-	var rawJSON json.RawMessage
-	if err := json.NewDecoder(rawRequest).Decode(&rawJSON); err != nil {
-		if errors.Is(err, io.EOF) {
-			return req, nil
-		}
-
-		return nil, fmt.Errorf("failed to decode raw request: %w", err)
+	if err := c.rp.Parse(msg); err != nil {
+		return nil, fmt.Errorf("failed to parse request: %w", err)
 	}
 
-	if err := protojson.Unmarshal(rawJSON, req); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal proto: %w", err)
-	}
-
-	return req, nil
+	return msg, nil
 }

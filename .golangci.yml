@@ -71,6 +71,7 @@ linters:
     - depguard
     - exhaustruct
     - execinquery
+    - ireturn
     - gomnd
 
 issues:
