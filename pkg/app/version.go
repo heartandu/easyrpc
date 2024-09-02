@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -14,7 +13,7 @@ func (a *App) registerVersionCmd() {
 		Use:   "version",
 		Short: "Print application version",
 		Run: func(_ *cobra.Command, _ []string) {
-			fmt.Fprintf(os.Stderr, "easyrpc %s\n", version)
+			fmt.Fprintf(a.cmd.OutOrStdout(), "easyrpc %s\n", version)
 		},
 	})
 }

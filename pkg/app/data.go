@@ -22,7 +22,7 @@ func handleDataFlag(cmd *cobra.Command) (io.ReadCloser, error) {
 
 	if strings.HasPrefix(data, "@") {
 		if len(data) == 1 {
-			return io.NopCloser(os.Stdin), nil
+			return io.NopCloser(cmd.InOrStdin()), nil
 		}
 
 		file, err := os.Open(data[1:])

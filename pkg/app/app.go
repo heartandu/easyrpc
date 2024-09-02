@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"io"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -36,6 +37,17 @@ The main purpose of this utility is for manual API testing.`,
 		viper:  viper.New(),
 		pflags: cmd.PersistentFlags(),
 	}
+}
+
+// SetOutput sets output writer for all commands.
+func (a *App) SetOutput(w io.Writer) {
+	a.cmd.SetOut(w)
+	a.cmd.SetOutput(w)
+}
+
+// SetInput sets input reader for all commands.
+func (a *App) SetInput(r io.Reader) {
+	a.cmd.SetIn(r)
 }
 
 // Run sets up an application and executes the command.

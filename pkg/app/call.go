@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -53,7 +52,7 @@ func (a *App) registerCallCmd() {
 			rp := format.JSONRequestParser(input, protojson.UnmarshalOptions{})
 			rf := format.JSONResponseFormatter(protojson.MarshalOptions{Multiline: true})
 
-			callCase := usecase.NewCall(os.Stdout, descSrc, clientConn, rp, rf)
+			callCase := usecase.NewCall(a.cmd.OutOrStdout(), descSrc, clientConn, rp, rf)
 			if err := callCase.MakeRPCCall(context.Background(), args[0], input); err != nil {
 				return fmt.Errorf("call rpc failed: %w", err)
 			}
