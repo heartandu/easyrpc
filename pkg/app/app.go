@@ -78,12 +78,20 @@ func (a *App) bindPFlags() {
 		"proto files to use, can provide multiple files by repeating the flag",
 	)
 	a.pflags.BoolP("reflection", "r", false, "use server reflection to make requests")
+	a.pflags.Bool("tls", false, "use a secure TLS connection")
+	a.pflags.String("cacert", "", "CA certificate file for verifying the server")
+	a.pflags.String("cert", "", "the certificate file for mutual TLS auth. It must be provided with --cert-key")
+	a.pflags.String("cert-key", "", "the private key for mutual TLS auth. It must be provided with --cert")
 }
 
 // bindPFlagsToConfig binds application global flags to configuration structure.
 func (a *App) bindPFlagsToConfig() {
+	a.viper.BindPFlag("request.cacert", a.pflags.Lookup("cacert"))          //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("request.cert", a.pflags.Lookup("cert"))              //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("request.cert_key", a.pflags.Lookup("cert-key"))      //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("server.address", a.pflags.Lookup("address"))         //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("server.reflection", a.pflags.Lookup("reflection"))   //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("server.tls", a.pflags.Lookup("tls"))                 //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("proto.import_paths", a.pflags.Lookup("import-path")) //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("proto.proto_files", a.pflags.Lookup("proto-file"))   //nolint:errcheck // viper flag bind
 }

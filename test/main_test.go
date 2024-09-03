@@ -2,21 +2,30 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/heartandu/easyrpc/internal/testdata"
+	"github.com/heartandu/easyrpc/pkg/tlsconf"
 )
 
 const (
-	socket   = "/tmp/test.sock"
-	protocol = "unix"
-	address  = protocol + "://" + socket
+	insecureSocket  = "/tmp/insecure.sock"
+	tlsSocket       = "/tmp/tls.sock"
+	protocol        = "unix"
+	insecureAddress = protocol + "://" + insecureSocket
+	tlsAddress      = protocol + "://" + tlsSocket
+
+	cacert  = "../internal/testdata/rootCA.crt"
+	cert    = "../internal/testdata/localhost.crt"
+	certKey = "../internal/testdata/localhost.key"
 )
 
 func TestMain(m *testing.M) {
@@ -24,14 +33,36 @@ func TestMain(m *testing.M) {
 }
 
 func runTest(m *testing.M) int {
-	lis, err := net.Listen(protocol, socket)
+	cfg, err := tlsconf.Config(cacert, cert, certKey)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Printf("failed to get tls config: %v", err)
+		return 1
 	}
 
-	s := grpc.NewServer()
-	defer s.Stop()
+	insecureServer, err := serve(protocol, insecureSocket)
+	if err != nil {
+		log.Printf("failed to serve insecure server: %v", err)
+		return 1
+	}
+	defer insecureServer.Stop()
 
+	tlsServer, err := serve(protocol, tlsSocket, grpc.Creds(credentials.NewTLS(cfg)))
+	if err != nil {
+		log.Printf("failed to serve tls server: %v", err)
+		return 1
+	}
+	defer tlsServer.Stop()
+
+	return m.Run()
+}
+
+func serve(protocol, socket string, opts ...grpc.ServerOption) (*grpc.Server, error) {
+	lis, err := net.Listen(protocol, socket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to listen: %w", err)
+	}
+
+	s := grpc.NewServer(opts...)
 	testdata.RegisterEchoServiceServer(s, &server{})
 	reflection.Register(s)
 
@@ -41,7 +72,7 @@ func runTest(m *testing.M) int {
 		}
 	}()
 
-	return m.Run()
+	return s, nil
 }
 
 type server struct {

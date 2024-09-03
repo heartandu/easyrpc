@@ -23,7 +23,7 @@ func TestCall(t *testing.T) {
 
 	protoConfigFileName, cleanup, err := createTempFile("*.yaml", `
         server:
-          address: `+address+`
+          address: `+insecureAddress+`
         proto:
           import_paths:
             - ../internal/testdata
@@ -37,11 +37,26 @@ func TestCall(t *testing.T) {
 
 	reflectionConfigFileName, cleanup, err := createTempFile("*.yaml", `
         server:
-          address: `+address+`
+          address: `+insecureAddress+`
           reflection: true
     `)
 	if err != nil {
 		t.Fatalf("failed to create proto config file: %v", err)
+	}
+	defer cleanup()
+
+	tlsConfigFileName, cleanup, err := createTempFile("*.yaml", `
+        server:
+          address: `+tlsAddress+`
+          reflection: true
+          tls: true
+        request:
+          cacert: `+cacert+`
+          cert: `+cert+`
+          cert_key: `+certKey+`
+        `)
+	if err != nil {
+		t.Fatalf("failed to create tls config file: %v", err)
 	}
 	defer cleanup()
 
@@ -55,7 +70,7 @@ func TestCall(t *testing.T) {
 			name: "by proto",
 			args: []string{
 				"-a",
-				address,
+				insecureAddress,
 				"-d",
 				`{"msg":"oops"}`,
 				"-i",
@@ -69,7 +84,7 @@ func TestCall(t *testing.T) {
 			name: "by reflection",
 			args: []string{
 				"-a",
-				address,
+				insecureAddress,
 				"-d",
 				`{"msg":"hello"}`,
 				"-r",
@@ -80,7 +95,7 @@ func TestCall(t *testing.T) {
 			name: "data from file",
 			args: []string{
 				"-a",
-				address,
+				insecureAddress,
 				"-d",
 				"@" + fileName,
 				"-r",
@@ -91,7 +106,7 @@ func TestCall(t *testing.T) {
 			name: "data from stdin",
 			args: []string{
 				"-a",
-				address,
+				insecureAddress,
 				"-d",
 				"@",
 				"-r",
@@ -118,6 +133,48 @@ func TestCall(t *testing.T) {
 				`{"msg":"reflection config"}`,
 			},
 			want: "reflection config",
+		},
+		{
+			name: "tls with only root certificate",
+			args: []string{
+				"-a",
+				tlsAddress,
+				"-d",
+				`{"msg":"tls"}`,
+				"-r",
+				"--tls",
+				"--cacert",
+				cacert,
+			},
+			want: "tls",
+		},
+		{
+			name: "tls with server certificates",
+			args: []string{
+				"-a",
+				tlsAddress,
+				"-d",
+				`{"msg":"tls certs"}`,
+				"-r",
+				"--tls",
+				"--cacert",
+				cacert,
+				"--cert",
+				cert,
+				"--cert-key",
+				certKey,
+			},
+			want: "tls certs",
+		},
+		{
+			name: "tls with server certificates config",
+			args: []string{
+				"--config",
+				tlsConfigFileName,
+				"-d",
+				`{"msg":"tls certs config"}`,
+			},
+			want: "tls certs config",
 		},
 	}
 	for _, tt := range tests {

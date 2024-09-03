@@ -6,11 +6,13 @@ import (
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/heartandu/easyrpc/pkg/descriptor"
 	"github.com/heartandu/easyrpc/pkg/format"
+	"github.com/heartandu/easyrpc/pkg/tlsconf"
 	"github.com/heartandu/easyrpc/pkg/usecase"
 )
 
@@ -30,9 +32,14 @@ func (a *App) registerCallCmd() {
 
 			ctx := context.Background()
 
+			creds, err := a.transportCredentials()
+			if err != nil {
+				return fmt.Errorf("failed to get transport credentials: %w", err)
+			}
+
 			clientConn, err := grpc.NewClient(
 				a.cfg.Server.Address,
-				grpc.WithTransportCredentials(insecure.NewCredentials()),
+				grpc.WithTransportCredentials(creds),
 			)
 			if err != nil {
 				return fmt.Errorf("failed to create grpc client connection: %w", err)
@@ -64,4 +71,17 @@ func (a *App) registerCallCmd() {
 	registerDataFlag(cmd)
 
 	a.cmd.AddCommand(cmd)
+}
+
+func (a *App) transportCredentials() (credentials.TransportCredentials, error) {
+	if a.cfg.Server.TLS {
+		conf, err := tlsconf.Config(a.cfg.Request.CACert, a.cfg.Request.Cert, a.cfg.Request.CertKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make tls config: %w", err)
+		}
+
+		return credentials.NewTLS(conf), nil
+	}
+
+	return insecure.NewCredentials(), nil
 }
