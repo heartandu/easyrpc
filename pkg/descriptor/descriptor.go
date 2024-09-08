@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"iter"
 	"os"
 
 	"github.com/bufbuild/protocompile"
@@ -28,6 +29,7 @@ var ErrReflectionNotSupported = errors.New("server does not support reflection A
 // Source defines the interface for a source of protocol buffer descriptors.
 type Source interface {
 	ListServices() ([]string, error)
+	ListMethods() ([]string, error)
 	FindSymbol(name string) (protoreflect.Descriptor, error)
 }
 
@@ -68,15 +70,39 @@ type protoFilesSource struct {
 
 // ListServices returns a list of services in the protocol buffer files.
 func (s *protoFilesSource) ListServices() ([]string, error) {
-	var services []string
+	services := make([]string, 0)
 
-	for _, fd := range s.fds {
-		for i := range fd.Services().Len() {
-			services = append(services, string(fd.Services().Get(i).FullName()))
-		}
+	for service := range s.services() {
+		services = append(services, string(service.FullName()))
 	}
 
 	return services, nil
+}
+
+// ListMethods returns a list of methods in the protocol buffer files.
+func (s *protoFilesSource) ListMethods() ([]string, error) {
+	methods := make([]string, 0)
+
+	for service := range s.services() {
+		m := service.Methods()
+		for i := range m.Len() {
+			methods = append(methods, string(m.Get(i).FullName()))
+		}
+	}
+
+	return methods, nil
+}
+
+func (s *protoFilesSource) services() iter.Seq[protoreflect.ServiceDescriptor] {
+	return func(yield func(protoreflect.ServiceDescriptor) bool) {
+		for _, fd := range s.fds {
+			for i := range fd.Services().Len() {
+				if cont := yield(fd.Services().Get(i)); !cont {
+					return
+				}
+			}
+		}
+	}
 }
 
 // FindSymbol finds a symbol in the protocol buffer files.
@@ -102,6 +128,12 @@ func (s *serverReflectionSource) ListServices() ([]string, error) {
 	services, err := s.c.ListServices()
 
 	return services, reflectWrapErr(err)
+}
+
+// ListMethods returns a list of methods using server reflection.
+// TODO: find a way to return method names over server reflection.
+func (s *serverReflectionSource) ListMethods() ([]string, error) {
+	return s.ListServices()
 }
 
 // FindSymbol finds a symbol using server reflection.
