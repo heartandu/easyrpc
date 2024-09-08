@@ -82,6 +82,8 @@ func (a *App) bindPFlags() {
 	a.pflags.String("cacert", "", "CA certificate file for verifying the server")
 	a.pflags.String("cert", "", "the certificate file for mutual TLS auth. It must be provided with --cert-key")
 	a.pflags.String("cert-key", "", "the private key for mutual TLS auth. It must be provided with --cert")
+	a.pflags.String("package", "", "the package name to use as default")
+	a.pflags.String("service", "", "the service name to use as default")
 }
 
 // bindPFlagsToConfig binds application global flags to configuration structure.
@@ -94,6 +96,8 @@ func (a *App) bindPFlagsToConfig() {
 	a.viper.BindPFlag("tls", a.pflags.Lookup("tls"))                  //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("import_paths", a.pflags.Lookup("import-path")) //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("proto_files", a.pflags.Lookup("proto-file"))   //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("package", a.pflags.Lookup("package"))          //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("service", a.pflags.Lookup("service"))          //nolint:errcheck // viper flag bind
 }
 
 // registerCommands adds all application commands to the root one.

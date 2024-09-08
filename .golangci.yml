@@ -32,6 +32,11 @@ linters-settings:
       - opinionated
   gocyclo:
     min-complexity: 20
+  godox:
+    keywords:
+      # - TODO
+      - BUG
+      - FIXME
   goimports:
     local-prefixes: github.com/heartandu/easyrpc
   govet:

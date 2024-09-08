@@ -45,9 +45,10 @@ func NewCall(
 func (c *Call) MakeRPCCall(ctx context.Context, methodName string, rawRequest io.ReadCloser) error {
 	rpc, err := c.findMethod(methodName)
 	if err != nil {
-		return fmt.Errorf("failed to find method: %w", err)
+		return fmt.Errorf("failed to find method %q: %w", methodName, err)
 	}
 
+	// TODO: Implement this.
 	if rpc.IsStreamingClient() || rpc.IsStreamingServer() {
 		return ErrNotImplemented
 	}

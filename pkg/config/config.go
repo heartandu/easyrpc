@@ -2,9 +2,9 @@ package config
 
 // Config represents a common cross-application configuration.
 type Config struct {
-	Request Request `mapstructure:",squash"`
-	Server  Server  `mapstructure:",squash"`
 	Proto   Proto   `mapstructure:",squash"`
+	Server  Server  `mapstructure:",squash"`
+	Request Request `mapstructure:",squash"`
 }
 
 // Proto represents a set of proto files related configuration.
@@ -18,10 +18,13 @@ type Server struct {
 	Address    string `mapstructure:"address"`
 	Reflection bool   `mapstructure:"reflection"`
 	TLS        bool   `mapstructure:"tls"`
+	CACert     string `mapstructure:"cacert"`
+	Cert       string `mapstructure:"cert"`
+	CertKey    string `mapstructure:"cert_key"`
 }
 
+// Request represents a request configuration.
 type Request struct {
-	CACert  string `mapstructure:"cacert"`
-	Cert    string `mapstructure:"cert"`
-	CertKey string `mapstructure:"cert_key"`
+	Package string `mapstructure:"package"`
+	Service string `mapstructure:"service"`
 }

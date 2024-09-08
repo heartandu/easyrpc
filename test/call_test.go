@@ -55,6 +55,17 @@ func TestCall(t *testing.T) {
 	}
 	defer cleanup()
 
+	packageAndServiceConfigFileName, cleanup, err := createTempFile("*.yaml", `
+        address: `+insecureAddress+`
+        reflection: true
+        package: echo
+        service: EchoService
+    `)
+	if err != nil {
+		t.Fatalf("failed to create proto config file: %v", err)
+	}
+	defer cleanup()
+
 	tests := []struct {
 		name string
 		args []string
@@ -64,6 +75,7 @@ func TestCall(t *testing.T) {
 		{
 			name: "by proto",
 			args: []string{
+				"echo.EchoService.Echo",
 				"-a",
 				insecureAddress,
 				"-d",
@@ -78,6 +90,7 @@ func TestCall(t *testing.T) {
 		{
 			name: "by reflection",
 			args: []string{
+				"echo.EchoService.Echo",
 				"-a",
 				insecureAddress,
 				"-d",
@@ -89,6 +102,7 @@ func TestCall(t *testing.T) {
 		{
 			name: "data from file",
 			args: []string{
+				"echo.EchoService.Echo",
 				"-a",
 				insecureAddress,
 				"-d",
@@ -100,6 +114,7 @@ func TestCall(t *testing.T) {
 		{
 			name: "data from stdin",
 			args: []string{
+				"echo.EchoService.Echo",
 				"-a",
 				insecureAddress,
 				"-d",
@@ -112,6 +127,7 @@ func TestCall(t *testing.T) {
 		{
 			name: "by proto with config",
 			args: []string{
+				"echo.EchoService.Echo",
 				"--config",
 				protoConfigFileName,
 				"-d",
@@ -122,6 +138,7 @@ func TestCall(t *testing.T) {
 		{
 			name: "by reflection with config",
 			args: []string{
+				"echo.EchoService.Echo",
 				"--config",
 				reflectionConfigFileName,
 				"-d",
@@ -132,6 +149,7 @@ func TestCall(t *testing.T) {
 		{
 			name: "tls with only root certificate",
 			args: []string{
+				"echo.EchoService.Echo",
 				"-a",
 				tlsAddress,
 				"-d",
@@ -146,6 +164,7 @@ func TestCall(t *testing.T) {
 		{
 			name: "tls with server certificates",
 			args: []string{
+				"echo.EchoService.Echo",
 				"-a",
 				tlsAddress,
 				"-d",
@@ -164,12 +183,54 @@ func TestCall(t *testing.T) {
 		{
 			name: "tls with server certificates config",
 			args: []string{
+				"echo.EchoService.Echo",
 				"--config",
 				tlsConfigFileName,
 				"-d",
 				`{"msg":"tls certs config"}`,
 			},
 			want: "tls certs config",
+		},
+		{
+			name: "package flag specified",
+			args: []string{
+				"EchoService.Echo",
+				"-a",
+				insecureAddress,
+				"-d",
+				`{"msg":"package flag"}`,
+				"-r",
+				"--package",
+				"echo",
+			},
+			want: "package flag",
+		},
+		{
+			name: "package and service flag specified",
+			args: []string{
+				"Echo",
+				"-a",
+				insecureAddress,
+				"-d",
+				`{"msg":"package and service flags"}`,
+				"-r",
+				"--package",
+				"echo",
+				"--service",
+				"EchoService",
+			},
+			want: "package and service flags",
+		},
+		{
+			name: "package and service config file specified",
+			args: []string{
+				"Echo",
+				"--config",
+				packageAndServiceConfigFileName,
+				"-d",
+				`{"msg":"package and service flags"}`,
+			},
+			want: "package and service flags",
 		},
 	}
 	for _, tt := range tests {
@@ -218,7 +279,6 @@ func runCall(in io.Reader, args ...string) ([]byte, error) {
 	os.Args = append([]string{
 		"easyrpc",
 		"call",
-		"echo.EchoService.Echo",
 	}, args...)
 
 	b := bytes.NewBuffer(nil)

@@ -12,14 +12,16 @@ import (
 
 	"github.com/heartandu/easyrpc/pkg/descriptor"
 	"github.com/heartandu/easyrpc/pkg/format"
+	"github.com/heartandu/easyrpc/pkg/fqn"
 	"github.com/heartandu/easyrpc/pkg/tlsconf"
 	"github.com/heartandu/easyrpc/pkg/usecase"
 )
 
 func (a *App) registerCallCmd() {
 	cmd := &cobra.Command{
-		Use:   "call [method name]",
-		Short: "Call a remote RPC",
+		Use:     "call [method name]",
+		Aliases: []string{"c"},
+		Short:   "Call a remote RPC",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return ErrMissingArgs
@@ -60,7 +62,12 @@ func (a *App) registerCallCmd() {
 			rf := format.JSONResponseFormatter(protojson.MarshalOptions{Multiline: true})
 
 			callCase := usecase.NewCall(a.cmd.OutOrStdout(), descSrc, clientConn, rp, rf)
-			if err := callCase.MakeRPCCall(context.Background(), args[0], input); err != nil {
+			err = callCase.MakeRPCCall(
+				context.Background(),
+				fqn.FullyQualifiedMethodName(args[0], a.cfg.Request.Package, a.cfg.Request.Service),
+				input,
+			)
+			if err != nil {
 				return fmt.Errorf("call rpc failed: %w", err)
 			}
 
@@ -75,7 +82,7 @@ func (a *App) registerCallCmd() {
 
 func (a *App) transportCredentials() (credentials.TransportCredentials, error) {
 	if a.cfg.Server.TLS {
-		conf, err := tlsconf.Config(a.cfg.Request.CACert, a.cfg.Request.Cert, a.cfg.Request.CertKey)
+		conf, err := tlsconf.Config(a.cfg.Server.CACert, a.cfg.Server.Cert, a.cfg.Server.CertKey)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make tls config: %w", err)
 		}
