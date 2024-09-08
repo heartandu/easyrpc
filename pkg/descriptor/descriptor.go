@@ -1,5 +1,7 @@
 package descriptor
 
+// TODO: remove this nolint block after golangci-lint update
+//nolint:gci // iter is part of the standard library
 import (
 	"context"
 	"errors"
@@ -10,7 +12,6 @@ import (
 
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
-	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -117,34 +118,55 @@ func (s *protoFilesSource) FindSymbol(name string) (protoreflect.Descriptor, err
 }
 
 type serverReflectionSource struct {
-	c interface {
-		ListServices() ([]string, error)
-		FileContainingSymbol(symbol string) (*desc.FileDescriptor, error)
-	}
+	c *grpcreflect.Client
 }
 
 // ListServices returns a list of services using server reflection.
 func (s *serverReflectionSource) ListServices() ([]string, error) {
 	services, err := s.c.ListServices()
+	if err != nil {
+		return nil, reflectWrapErr("failed to query service list", err)
+	}
 
-	return services, reflectWrapErr(err)
+	return services, nil
 }
 
 // ListMethods returns a list of methods using server reflection.
-// TODO: find a way to return method names over server reflection.
 func (s *serverReflectionSource) ListMethods() ([]string, error) {
-	return s.ListServices()
+	services, err := s.c.ListServices()
+	if err != nil {
+		return nil, reflectWrapErr("failed to query service list", err)
+	}
+
+	methods := make([]string, 0)
+
+	for _, service := range services {
+		fd, err := s.c.FileContainingSymbol(service)
+		if err != nil {
+			return nil, reflectWrapErr("failed to query file containing symbol", err)
+		}
+
+		for _, fds := range fd.GetServices() {
+			for _, md := range fds.GetMethods() {
+				methods = append(methods, md.GetFullyQualifiedName())
+			}
+		}
+	}
+
+	return methods, nil
 }
 
 // FindSymbol finds a symbol using server reflection.
 func (s *serverReflectionSource) FindSymbol(name string) (protoreflect.Descriptor, error) {
-	fd, err := s.c.FileContainingSymbol(name)
+	fileDescriptor, err := s.c.FileContainingSymbol(name)
 	if err != nil {
-		return nil, reflectWrapErr(err)
+		return nil, reflectWrapErr("failed to query file containing symbol", err)
 	}
 
-	if d := fd.FindSymbol(name); d != nil {
-		if wr, ok := d.(desc.DescriptorWrapper); ok {
+	if d := fileDescriptor.FindSymbol(name); d != nil {
+		if wr, ok := d.(interface {
+			Unwrap() protoreflect.Descriptor
+		}); ok {
 			return wr.Unwrap(), nil
 		}
 	}
@@ -152,7 +174,7 @@ func (s *serverReflectionSource) FindSymbol(name string) (protoreflect.Descripto
 	return nil, ErrSymbolNotFound
 }
 
-func reflectWrapErr(err error) error {
+func reflectWrapErr(msg string, err error) error {
 	if err == nil {
 		return nil
 	}
@@ -161,5 +183,5 @@ func reflectWrapErr(err error) error {
 		return ErrReflectionNotSupported
 	}
 
-	return err
+	return fmt.Errorf("%s: %w", msg, err)
 }
