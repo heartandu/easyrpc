@@ -25,6 +25,7 @@ type Server struct {
 
 // Request represents a request configuration.
 type Request struct {
-	Package string `mapstructure:"package"`
-	Service string `mapstructure:"service"`
+	Metadata map[string]string `mapstructure:"metadata"`
+	Package  string            `mapstructure:"package"`
+	Service  string            `mapstructure:"service"`
 }

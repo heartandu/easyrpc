@@ -24,16 +24,14 @@ func TestCall(t *testing.T) {
         import_paths:
           - `+importPath+`
         proto_files:
-          - `+protoFile+`
-    `)
+          - `+protoFile)
 	if err != nil {
 		t.Fatalf("failed to create proto config file: %v", err)
 	}
 
 	reflectionConfigFileName, err := createTempFile(fs, "reflect.yaml", `
         address: `+insecureAddress+`
-        reflection: true
-    `)
+        reflection: true`)
 	if err != nil {
 		t.Fatalf("failed to create proto config file: %v", err)
 	}
@@ -44,8 +42,7 @@ func TestCall(t *testing.T) {
         tls: true
         cacert: `+cacert+`
         cert: `+cert+`
-        cert_key: `+certKey+`
-        `)
+        cert_key: `+certKey)
 	if err != nil {
 		t.Fatalf("failed to create tls config file: %v", err)
 	}
@@ -54,10 +51,18 @@ func TestCall(t *testing.T) {
         address: `+insecureAddress+`
         reflection: true
         package: echo
-        service: EchoService
-    `)
+        service: EchoService`)
 	if err != nil {
 		t.Fatalf("failed to create proto config file: %v", err)
+	}
+
+	mdConfigFileName, err := createTempFile(fs, "md.yaml", `
+        address: `+insecureAddress+`
+        reflection: true
+        metadata:
+          test: config`)
+	if err != nil {
+		t.Fatalf("failed to create metadata config file: %v", err)
 	}
 
 	tests := []struct {
@@ -225,6 +230,44 @@ func TestCall(t *testing.T) {
 				`{"msg":"package and service flags"}`,
 			},
 			want: "package and service flags",
+		},
+		{
+			name: "with metadata flag",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-r",
+				"-a",
+				insecureAddress,
+				"-d",
+				`{"msg":"md flag"}`,
+				"-H",
+				"test=test",
+			},
+			want: "md flag\ntest",
+		},
+		{
+			name: "with metadata in config",
+			args: []string{
+				"echo.EchoService.Echo",
+				"--config",
+				mdConfigFileName,
+				"-d",
+				`{"msg":"md flag"}`,
+			},
+			want: "md flag\nconfig",
+		},
+		{
+			name: "with metadata flag precedence",
+			args: []string{
+				"echo.EchoService.Echo",
+				"--config",
+				mdConfigFileName,
+				"-d",
+				`{"msg":"md flag"}`,
+				"-H",
+				"test=overwritten",
+			},
+			want: "md flag\noverwritten",
 		},
 	}
 	for _, tt := range tests {

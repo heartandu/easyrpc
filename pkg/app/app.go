@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -92,6 +93,7 @@ func (a *App) bindPFlags() {
 	a.pflags.String("cert-key", "", "the private key for mutual TLS auth. It must be provided with --cert")
 	a.pflags.String("package", "", "the package name to use as default")
 	a.pflags.String("service", "", "the service name to use as default")
+	a.pflags.StringToStringP("metadata", "H", nil, "default headers that are attached to every request")
 }
 
 // bindPFlagsToConfig binds application global flags to configuration structure.
@@ -106,6 +108,7 @@ func (a *App) bindPFlagsToConfig() {
 	a.viper.BindPFlag("proto_files", a.pflags.Lookup("proto-file"))   //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("package", a.pflags.Lookup("package"))          //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("service", a.pflags.Lookup("service"))          //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("metadata", a.pflags.Lookup("metadata"))        //nolint:errcheck // viper flag bind
 }
 
 // registerCommands adds all application commands to the root one.
@@ -135,8 +138,10 @@ func (a *App) readConfig() {
 
 	var notFoundErr viper.ConfigFileNotFoundError
 	if err := a.viper.ReadInConfig(); err != nil && !errors.As(err, &notFoundErr) {
-		cobra.CheckErr(err)
+		cobra.CheckErr(fmt.Errorf("failed to read config: %w", err))
 	}
 
-	cobra.CheckErr(a.viper.Unmarshal(&a.cfg))
+	if err := a.viper.Unmarshal(&a.cfg); err != nil {
+		cobra.CheckErr(fmt.Errorf("failed to unmarshal config: %w", err))
+	}
 }

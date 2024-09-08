@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
@@ -22,6 +23,7 @@ type Call struct {
 	cc     grpc.ClientConnInterface
 	rp     format.RequestParser
 	rf     format.ResponseFormatter
+	md     metadata.MD
 }
 
 // NewCall returns a new instance of Call.
@@ -31,6 +33,7 @@ func NewCall(
 	clientConn grpc.ClientConnInterface,
 	reqParser format.RequestParser,
 	respFormatter format.ResponseFormatter,
+	md metadata.MD,
 ) *Call {
 	return &Call{
 		output: output,
@@ -38,6 +41,7 @@ func NewCall(
 		cc:     clientConn,
 		rp:     reqParser,
 		rf:     respFormatter,
+		md:     md,
 	}
 }
 
@@ -65,7 +69,7 @@ func (c *Call) MakeRPCCall(ctx context.Context, methodName string, rawRequest io
 		return fmt.Errorf("failed to convert method name:: %w", err)
 	}
 
-	if err = c.cc.Invoke(ctx, reqStr, req, resp); err != nil {
+	if err = c.cc.Invoke(metadata.NewOutgoingContext(ctx, c.md), reqStr, req, resp); err != nil {
 		return fmt.Errorf("failed to invoke rpc: %w", err)
 	}
 

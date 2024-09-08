@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/heartandu/easyrpc/pkg/descriptor"
@@ -109,7 +110,7 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 	rp := format.JSONRequestParser(input, protojson.UnmarshalOptions{})
 	rf := format.JSONResponseFormatter(protojson.MarshalOptions{Multiline: true})
 
-	callCase := usecase.NewCall(a.cmd.OutOrStdout(), descSrc, clientConn, rp, rf)
+	callCase := usecase.NewCall(a.cmd.OutOrStdout(), descSrc, clientConn, rp, rf, metadata.New(a.cfg.Request.Metadata))
 
 	err = callCase.MakeRPCCall(
 		context.Background(),

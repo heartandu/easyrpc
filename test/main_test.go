@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
@@ -84,8 +85,16 @@ type server struct {
 	testdata.UnimplementedEchoServiceServer
 }
 
-func (*server) Echo(_ context.Context, r *testdata.EchoRequest) (*testdata.EchoResponse, error) {
-	return &testdata.EchoResponse{Msg: r.GetMsg()}, nil
+func (*server) Echo(ctx context.Context, r *testdata.EchoRequest) (*testdata.EchoResponse, error) {
+	const testKey = "test"
+
+	msg := r.GetMsg()
+
+	if md, ok := metadata.FromIncomingContext(ctx); ok && len(md.Get(testKey)) != 0 {
+		msg += "\n" + md.Get(testKey)[0]
+	}
+
+	return &testdata.EchoResponse{Msg: msg}, nil
 }
 
 func (*server) Error(_ context.Context, r *testdata.ErrorRequest) (*testdata.ErrorResponse, error) {
