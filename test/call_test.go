@@ -3,46 +3,42 @@ package test
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
-	"log"
-	"os"
 	"strings"
 	"testing"
 
-	"github.com/heartandu/easyrpc/pkg/app"
+	"github.com/spf13/afero"
 )
 
 // TODO: Add streaming call tests, add more protobuf types to tests.
 func TestCall(t *testing.T) {
-	fileName, cleanup, err := createTempFile("", `{"msg":"file test"}`)
+	fs := afero.NewMemMapFs()
+
+	requestFileName, err := createTempFile(fs, "msg.json", `{"msg":"file test"}`)
 	if err != nil {
 		t.Fatalf("failed to create input file: %v", err)
 	}
-	defer cleanup()
 
-	protoConfigFileName, cleanup, err := createTempFile("*.yaml", `
+	protoConfigFileName, err := createTempFile(fs, "proto.yaml", `
         address: `+insecureAddress+`
         import_paths:
-          - ../internal/testdata
+          - `+importPath+`
         proto_files:
-          - test.proto
+          - `+protoFile+`
     `)
 	if err != nil {
 		t.Fatalf("failed to create proto config file: %v", err)
 	}
-	defer cleanup()
 
-	reflectionConfigFileName, cleanup, err := createTempFile("*.yaml", `
+	reflectionConfigFileName, err := createTempFile(fs, "reflect.yaml", `
         address: `+insecureAddress+`
         reflection: true
     `)
 	if err != nil {
 		t.Fatalf("failed to create proto config file: %v", err)
 	}
-	defer cleanup()
 
-	tlsConfigFileName, cleanup, err := createTempFile("*.yaml", `
+	tlsConfigFileName, err := createTempFile(fs, "tls.yaml", `
         address: `+tlsAddress+`
         reflection: true
         tls: true
@@ -53,9 +49,8 @@ func TestCall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create tls config file: %v", err)
 	}
-	defer cleanup()
 
-	packageAndServiceConfigFileName, cleanup, err := createTempFile("*.yaml", `
+	packageAndServiceConfigFileName, err := createTempFile(fs, "pns.yaml", `
         address: `+insecureAddress+`
         reflection: true
         package: echo
@@ -64,7 +59,6 @@ func TestCall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create proto config file: %v", err)
 	}
-	defer cleanup()
 
 	tests := []struct {
 		name string
@@ -81,9 +75,9 @@ func TestCall(t *testing.T) {
 				"-d",
 				`{"msg":"oops"}`,
 				"-i",
-				"../internal/testdata",
+				importPath,
 				"-p",
-				"test.proto",
+				protoFile,
 			},
 			want: "oops",
 		},
@@ -106,7 +100,7 @@ func TestCall(t *testing.T) {
 				"-a",
 				insecureAddress,
 				"-d",
-				"@" + fileName,
+				"@" + requestFileName,
 				"-r",
 			},
 			want: "file test",
@@ -235,7 +229,7 @@ func TestCall(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b, err := runCall(tt.in, tt.args...)
+			b, err := runCall(fs, tt.in, tt.args...)
 			if err != nil {
 				t.Fatalf("command failed: output = %v, err = %v", string(b), err)
 			}
@@ -254,43 +248,6 @@ func TestCall(t *testing.T) {
 	}
 }
 
-func createTempFile(pattern, contents string) (string, func(), error) { //nolint:gocritic // no need to name returns
-	f, err := os.CreateTemp("", pattern)
-	if err != nil {
-		return "", func() {}, fmt.Errorf("failed to create temp file: %w", err)
-	}
-	defer f.Close()
-
-	if _, err = f.WriteString(contents); err != nil {
-		return "", func() {}, fmt.Errorf("failed to write contents: %w", err)
-	}
-
-	return f.Name(), func() {
-		if err := os.Remove(f.Name()); err != nil {
-			log.Printf("failed to remove input file: %v", err)
-		}
-	}, nil
-}
-
-func runCall(in io.Reader, args ...string) ([]byte, error) {
-	oldArgs := os.Args
-	defer func() { os.Args = oldArgs }()
-
-	os.Args = append([]string{
-		"easyrpc",
-		"call",
-	}, args...)
-
-	b := bytes.NewBuffer(nil)
-
-	a := app.NewApp()
-	a.SetOutput(b)
-
-	if in != nil {
-		a.SetInput(in)
-	}
-
-	err := a.Run()
-
-	return b.Bytes(), err
+func runCall(fs afero.Fs, in io.Reader, args ...string) ([]byte, error) {
+	return run(fs, in, append([]string{"call"}, args...)...)
 }

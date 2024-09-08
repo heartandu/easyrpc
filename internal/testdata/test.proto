@@ -6,6 +6,7 @@ option go_package = "./testdata";
 
 service EchoService {
   rpc Echo(EchoRequest) returns (EchoResponse) {}
+  rpc Error(ErrorRequest) returns (ErrorResponse) {}
 }
 
 message EchoRequest {
@@ -13,5 +14,13 @@ message EchoRequest {
 }
 
 message EchoResponse {
+  string msg = 1;
+}
+
+message ErrorRequest {
+  string msg = 1;
+}
+
+message ErrorResponse {
   string msg = 1;
 }

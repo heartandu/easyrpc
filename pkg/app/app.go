@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -17,6 +18,7 @@ type App struct {
 	cfgFile string
 	cfg     config.Config
 
+	fs     afero.Fs
 	cmd    *cobra.Command
 	viper  *viper.Viper
 	pflags *pflag.FlagSet
@@ -33,6 +35,7 @@ The main purpose of this utility is for manual API testing.`,
 	}
 
 	return &App{
+		fs:     afero.NewOsFs(),
 		cmd:    cmd,
 		viper:  viper.New(),
 		pflags: cmd.PersistentFlags(),
@@ -48,6 +51,11 @@ func (a *App) SetOutput(w io.Writer) {
 // SetInput sets input reader for all commands.
 func (a *App) SetInput(r io.Reader) {
 	a.cmd.SetIn(r)
+}
+
+func (a *App) SetFs(fs afero.Fs) {
+	a.fs = fs
+	a.viper.SetFs(fs)
 }
 
 // Run sets up an application and executes the command.

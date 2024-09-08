@@ -79,6 +79,7 @@ linters:
     - exportloopref
     - ireturn
     - gomnd
+    - varnamelen
 
 issues:
   exclude-rules:

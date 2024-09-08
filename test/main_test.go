@@ -9,23 +9,28 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 
 	"github.com/heartandu/easyrpc/internal/testdata"
 	"github.com/heartandu/easyrpc/pkg/tlsconf"
 )
 
 const (
-	insecureSocket  = "/tmp/insecure.sock"
-	tlsSocket       = "/tmp/tls.sock"
-	protocol        = "unix"
-	insecureAddress = protocol + "://" + insecureSocket
-	tlsAddress      = protocol + "://" + tlsSocket
+	insecureSocket  = ":50000"
+	tlsSocket       = ":50001"
+	protocol        = "tcp"
+	insecureAddress = "localhost" + insecureSocket
+	tlsAddress      = "localhost" + tlsSocket
 
 	cacert  = "../internal/testdata/rootCA.crt"
 	cert    = "../internal/testdata/localhost.crt"
 	certKey = "../internal/testdata/localhost.key"
+
+	importPath = "../internal/testdata"
+	protoFile  = "test.proto"
 )
 
 func TestMain(m *testing.M) {
@@ -81,4 +86,8 @@ type server struct {
 
 func (*server) Echo(_ context.Context, r *testdata.EchoRequest) (*testdata.EchoResponse, error) {
 	return &testdata.EchoResponse{Msg: r.GetMsg()}, nil
+}
+
+func (*server) Error(_ context.Context, r *testdata.ErrorRequest) (*testdata.ErrorResponse, error) {
+	return nil, status.Error(codes.Internal, "internal error")
 }

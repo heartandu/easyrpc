@@ -63,8 +63,20 @@ func (a *App) callAutocomplete(
 
 	result := make([]string, 0)
 
+	isCaseInsensitive := toComplete == strings.ToLower(toComplete)
+
+	completionToCompare := toComplete
+	if isCaseInsensitive {
+		completionToCompare = strings.ToLower(completionToCompare)
+	}
+
 	for _, method := range methods {
-		if strings.Contains(strings.ToLower(method), strings.ToLower(toComplete)) {
+		methodToCompare := method
+		if isCaseInsensitive {
+			methodToCompare = strings.ToLower(methodToCompare)
+		}
+
+		if strings.Contains(methodToCompare, completionToCompare) {
 			result = append(result, method)
 		}
 	}
@@ -77,7 +89,7 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 		return ErrMissingArgs
 	}
 
-	input, err := handleDataFlag(cmd)
+	input, err := handleDataFlag(a.fs, cmd)
 	if err != nil {
 		return fmt.Errorf("failed to handle data flag: %w", err)
 	}
