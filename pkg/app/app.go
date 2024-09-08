@@ -86,14 +86,14 @@ func (a *App) bindPFlags() {
 
 // bindPFlagsToConfig binds application global flags to configuration structure.
 func (a *App) bindPFlagsToConfig() {
-	a.viper.BindPFlag("request.cacert", a.pflags.Lookup("cacert"))          //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("request.cert", a.pflags.Lookup("cert"))              //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("request.cert_key", a.pflags.Lookup("cert-key"))      //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("server.address", a.pflags.Lookup("address"))         //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("server.reflection", a.pflags.Lookup("reflection"))   //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("server.tls", a.pflags.Lookup("tls"))                 //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("proto.import_paths", a.pflags.Lookup("import-path")) //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("proto.proto_files", a.pflags.Lookup("proto-file"))   //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("cacert", a.pflags.Lookup("cacert"))            //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("cert", a.pflags.Lookup("cert"))                //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("cert_key", a.pflags.Lookup("cert-key"))        //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("address", a.pflags.Lookup("address"))          //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("reflection", a.pflags.Lookup("reflection"))    //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("tls", a.pflags.Lookup("tls"))                  //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("import_paths", a.pflags.Lookup("import-path")) //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("proto_files", a.pflags.Lookup("proto-file"))   //nolint:errcheck // viper flag bind
 }
 
 // registerCommands adds all application commands to the root one.

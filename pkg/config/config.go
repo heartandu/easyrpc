@@ -2,9 +2,9 @@ package config
 
 // Config represents a common cross-application configuration.
 type Config struct {
-	Request Request `mapstructure:"request"`
-	Server  Server  `mapstructure:"server"`
-	Proto   Proto   `mapstructure:"proto"`
+	Request Request `mapstructure:",squash"`
+	Server  Server  `mapstructure:",squash"`
+	Proto   Proto   `mapstructure:",squash"`
 }
 
 // Proto represents a set of proto files related configuration.

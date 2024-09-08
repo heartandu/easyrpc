@@ -22,13 +22,11 @@ func TestCall(t *testing.T) {
 	defer cleanup()
 
 	protoConfigFileName, cleanup, err := createTempFile("*.yaml", `
-        server:
-          address: `+insecureAddress+`
-        proto:
-          import_paths:
-            - ../internal/testdata
-          proto_files:
-            - test.proto
+        address: `+insecureAddress+`
+        import_paths:
+          - ../internal/testdata
+        proto_files:
+          - test.proto
     `)
 	if err != nil {
 		t.Fatalf("failed to create proto config file: %v", err)
@@ -36,9 +34,8 @@ func TestCall(t *testing.T) {
 	defer cleanup()
 
 	reflectionConfigFileName, cleanup, err := createTempFile("*.yaml", `
-        server:
-          address: `+insecureAddress+`
-          reflection: true
+        address: `+insecureAddress+`
+        reflection: true
     `)
 	if err != nil {
 		t.Fatalf("failed to create proto config file: %v", err)
@@ -46,14 +43,12 @@ func TestCall(t *testing.T) {
 	defer cleanup()
 
 	tlsConfigFileName, cleanup, err := createTempFile("*.yaml", `
-        server:
-          address: `+tlsAddress+`
-          reflection: true
-          tls: true
-        request:
-          cacert: `+cacert+`
-          cert: `+cert+`
-          cert_key: `+certKey+`
+        address: `+tlsAddress+`
+        reflection: true
+        tls: true
+        cacert: `+cacert+`
+        cert: `+cert+`
+        cert_key: `+certKey+`
         `)
 	if err != nil {
 		t.Fatalf("failed to create tls config file: %v", err)
