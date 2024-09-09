@@ -1,7 +1,5 @@
 package test
 
-// TODO: remove this nolint block after golangci-lint update
-//nolint:gci // iter is part of the standard library
 import (
 	"iter"
 	"slices"
