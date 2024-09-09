@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -46,39 +47,93 @@ func NewCall(
 }
 
 // MakeRPCCall makes an RPC call using the provided configuration and method name.
-func (c *Call) MakeRPCCall(ctx context.Context, methodName string, rawRequest io.ReadCloser) error {
+func (c *Call) MakeRPCCall(ctx context.Context, methodName string) error {
 	rpc, err := c.findMethod(methodName)
 	if err != nil {
 		return fmt.Errorf("failed to find method %q: %w", methodName, err)
 	}
 
-	// TODO: Implement this.
-	if rpc.IsStreamingClient() || rpc.IsStreamingServer() {
-		return ErrNotImplemented
+	switch {
+	case rpc.IsStreamingClient() && rpc.IsStreamingServer():
+		return ErrNotImplemented // TODO: implement me
+	case rpc.IsStreamingServer():
+		return ErrNotImplemented // TODO: implement me
+	case rpc.IsStreamingClient():
+		return c.clientStreamCall(ctx, rpc)
+	default:
+		return c.unaryCall(ctx, rpc)
 	}
+}
 
+func (c *Call) clientStreamCall(ctx context.Context, rpc protoreflect.MethodDescriptor) error {
 	resp := dynamicpb.NewMessage(rpc.Output())
 
-	req, err := c.makeRequest(rpc, rawRequest)
+	method, err := requestMethod(rpc)
 	if err != nil {
+		return fmt.Errorf("failed to convert method name: %w", err)
+	}
+
+	desc := &grpc.StreamDesc{
+		StreamName:    string(rpc.Name()),
+		ServerStreams: rpc.IsStreamingServer(),
+		ClientStreams: rpc.IsStreamingClient(),
+	}
+
+	stream, err := c.cc.NewStream(ctx, desc, method)
+	if err != nil {
+		return fmt.Errorf("failed to create client stream: %w", err)
+	}
+
+	for {
+		req, err := c.makeRequest(rpc)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+
+			return fmt.Errorf("failed to make request: %w", err)
+		}
+
+		if err := stream.SendMsg(req); err != nil {
+			return fmt.Errorf("failed to send message: %w", err)
+		}
+	}
+
+	if err := stream.CloseSend(); err != nil {
+		return fmt.Errorf("failed to close client stream: %w", err)
+	}
+
+	if err := stream.RecvMsg(resp); err != nil && !errors.Is(err, io.EOF) {
+		return fmt.Errorf("failed to receive message: %w", err)
+	}
+
+	if err := c.printResponse(resp); err != nil {
+		return fmt.Errorf("failed to print response: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Call) unaryCall(ctx context.Context, rpc protoreflect.MethodDescriptor) error {
+	resp := dynamicpb.NewMessage(rpc.Output())
+
+	req, err := c.makeRequest(rpc)
+	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
 
-	reqStr, err := toRequestString(rpc)
+	reqStr, err := requestMethod(rpc)
 	if err != nil {
-		return fmt.Errorf("failed to convert method name:: %w", err)
+		return fmt.Errorf("failed to convert method name: %w", err)
 	}
 
 	if err = c.cc.Invoke(metadata.NewOutgoingContext(ctx, c.md), reqStr, req, resp); err != nil {
 		return fmt.Errorf("failed to invoke rpc: %w", err)
 	}
 
-	formattedResp, err := c.rf.Format(resp)
-	if err != nil {
-		return fmt.Errorf("failed to format response: %w", err)
+	if err := c.printResponse(resp); err != nil {
+		return fmt.Errorf("failed to print response: %w", err)
 	}
-
-	fmt.Fprintf(c.output, "%v\n", formattedResp)
 
 	return nil
 }
@@ -96,19 +151,28 @@ func (c *Call) findMethod(methodName string) (protoreflect.MethodDescriptor, err
 	return nil, ErrNotAMethod
 }
 
-func (c *Call) makeRequest(rpc protoreflect.MethodDescriptor, rawRequest io.ReadCloser) (proto.Message, error) {
-	defer rawRequest.Close()
-
+func (c *Call) makeRequest(rpc protoreflect.MethodDescriptor) (proto.Message, error) {
 	msg := dynamicpb.NewMessage(rpc.Input())
 
-	if err := c.rp.Parse(msg); err != nil {
+	if err := c.rp.Next(msg); err != nil {
 		return nil, fmt.Errorf("failed to parse request: %w", err)
 	}
 
 	return msg, nil
 }
 
-func toRequestString(rpc protoreflect.MethodDescriptor) (string, error) {
+func (c *Call) printResponse(resp *dynamicpb.Message) error {
+	formattedResp, err := c.rf.Format(resp)
+	if err != nil {
+		return fmt.Errorf("failed to format response: %w", err)
+	}
+
+	fmt.Fprintf(c.output, "%v\n", formattedResp)
+
+	return nil
+}
+
+func requestMethod(rpc protoreflect.MethodDescriptor) (string, error) {
 	const minParts = 2
 
 	parts := strings.Split(string(rpc.FullName()), ".")

@@ -94,6 +94,7 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to handle data flag: %w", err)
 	}
+	defer input.Close()
 
 	ctx := context.Background()
 
@@ -115,7 +116,6 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 	err = callCase.MakeRPCCall(
 		context.Background(),
 		fqn.FullyQualifiedMethodName(args[0], a.cfg.Request.Package, a.cfg.Request.Service),
-		input,
 	)
 	if err != nil {
 		return fmt.Errorf("call rpc failed: %w", err)
