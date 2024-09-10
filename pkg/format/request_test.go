@@ -35,7 +35,7 @@ func TestJSONRequestParser_Parse(t *testing.T) {
 			name:    "empty message",
 			input:   strings.NewReader(""),
 			want:    &testdata.EchoRequest{},
-			wantErr: nil,
+			wantErr: io.EOF,
 		},
 		{
 			name: "reader error",
@@ -54,7 +54,7 @@ func TestJSONRequestParser_Parse(t *testing.T) {
 
 			got := &testdata.EchoRequest{}
 
-			err := parser.Parse(got)
+			err := parser.Next(got)
 			require.ErrorIs(t, err, tt.wantErr)
 
 			if !proto.Equal(got, tt.want) {

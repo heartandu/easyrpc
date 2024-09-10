@@ -5,11 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
 
@@ -48,86 +46,60 @@ func NewCall(
 
 // MakeRPCCall makes an RPC call using the provided configuration and method name.
 func (c *Call) MakeRPCCall(ctx context.Context, methodName string) error {
-	rpc, err := c.findMethod(methodName)
+	m, err := c.findMethod(methodName)
 	if err != nil {
 		return fmt.Errorf("failed to find method %q: %w", methodName, err)
 	}
 
-	switch {
-	case rpc.IsStreamingClient() && rpc.IsStreamingServer():
-		return ErrNotImplemented // TODO: implement me
-	case rpc.IsStreamingServer():
-		return ErrNotImplemented // TODO: implement me
-	case rpc.IsStreamingClient():
-		return c.clientStreamCall(ctx, rpc)
-	default:
-		return c.unaryCall(ctx, rpc)
+	ctx = metadata.NewOutgoingContext(ctx, c.md)
+
+	if m.IsStreamingClient() || m.IsStreamingServer() {
+		return c.streamCall(ctx, m)
 	}
+
+	return c.unaryCall(ctx, m)
 }
 
-func (c *Call) clientStreamCall(ctx context.Context, rpc protoreflect.MethodDescriptor) error {
-	resp := dynamicpb.NewMessage(rpc.Output())
-
-	method, err := requestMethod(rpc)
+func (c *Call) streamCall(ctx context.Context, m descriptor.Method) error {
+	method, err := m.String()
 	if err != nil {
-		return fmt.Errorf("failed to convert method name: %w", err)
+		return fmt.Errorf("failed to get method name: %w", err)
 	}
 
-	desc := &grpc.StreamDesc{
-		StreamName:    string(rpc.Name()),
-		ServerStreams: rpc.IsStreamingServer(),
-		ClientStreams: rpc.IsStreamingClient(),
-	}
-
-	stream, err := c.cc.NewStream(ctx, desc, method)
+	stream, err := c.cc.NewStream(ctx, m.StreamDesc(), method)
 	if err != nil {
-		return fmt.Errorf("failed to create client stream: %w", err)
+		return fmt.Errorf("failed to create stream: %w", err)
 	}
 
-	for {
-		req, err := c.makeRequest(rpc)
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-
-			return fmt.Errorf("failed to make request: %w", err)
-		}
-
-		if err := stream.SendMsg(req); err != nil {
-			return fmt.Errorf("failed to send message: %w", err)
-		}
+	if err := c.streamRequestMessages(stream, m); err != nil {
+		return fmt.Errorf("failed to stream request messages: %w", err)
 	}
 
 	if err := stream.CloseSend(); err != nil {
-		return fmt.Errorf("failed to close client stream: %w", err)
+		return fmt.Errorf("failed to close stream: %w", err)
 	}
 
-	if err := stream.RecvMsg(resp); err != nil && !errors.Is(err, io.EOF) {
-		return fmt.Errorf("failed to receive message: %w", err)
-	}
-
-	if err := c.printResponse(resp); err != nil {
-		return fmt.Errorf("failed to print response: %w", err)
+	if err := c.streamResponseMessages(stream, m); err != nil {
+		return fmt.Errorf("failed to stream response messages: %w", err)
 	}
 
 	return nil
 }
 
-func (c *Call) unaryCall(ctx context.Context, rpc protoreflect.MethodDescriptor) error {
-	resp := dynamicpb.NewMessage(rpc.Output())
+func (c *Call) unaryCall(ctx context.Context, m descriptor.Method) error {
+	resp := m.ResponseMessage()
 
-	req, err := c.makeRequest(rpc)
+	req, err := m.RequestMessage(c.rp)
 	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
 
-	reqStr, err := requestMethod(rpc)
+	method, err := m.String()
 	if err != nil {
 		return fmt.Errorf("failed to convert method name: %w", err)
 	}
 
-	if err = c.cc.Invoke(metadata.NewOutgoingContext(ctx, c.md), reqStr, req, resp); err != nil {
+	if err = c.cc.Invoke(ctx, method, req, resp); err != nil {
 		return fmt.Errorf("failed to invoke rpc: %w", err)
 	}
 
@@ -138,27 +110,51 @@ func (c *Call) unaryCall(ctx context.Context, rpc protoreflect.MethodDescriptor)
 	return nil
 }
 
-func (c *Call) findMethod(methodName string) (protoreflect.MethodDescriptor, error) {
+func (c *Call) streamRequestMessages(stream grpc.ClientStream, m descriptor.Method) error {
+	for {
+		req, err := m.RequestMessage(c.rp)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+
+			return fmt.Errorf("failed to make request: %w", err)
+		}
+
+		if err := stream.SendMsg(req); err != nil {
+			return fmt.Errorf("failed to send message: %w", err)
+		}
+	}
+}
+
+func (c *Call) streamResponseMessages(stream grpc.ClientStream, m descriptor.Method) error {
+	for {
+		resp := m.ResponseMessage()
+		if err := stream.RecvMsg(resp); err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+
+			return fmt.Errorf("failed to receive message: %w", err)
+		}
+
+		if err := c.printResponse(resp); err != nil {
+			return fmt.Errorf("failed to print response: %w", err)
+		}
+	}
+}
+
+func (c *Call) findMethod(methodName string) (descriptor.Method, error) {
 	fd, err := c.ds.FindSymbol(methodName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find symbol: %w", err)
 	}
 
 	if rpc, ok := fd.(protoreflect.MethodDescriptor); ok {
-		return rpc, nil
+		return descriptor.NewMethod(rpc), nil
 	}
 
 	return nil, ErrNotAMethod
-}
-
-func (c *Call) makeRequest(rpc protoreflect.MethodDescriptor) (proto.Message, error) {
-	msg := dynamicpb.NewMessage(rpc.Input())
-
-	if err := c.rp.Next(msg); err != nil {
-		return nil, fmt.Errorf("failed to parse request: %w", err)
-	}
-
-	return msg, nil
 }
 
 func (c *Call) printResponse(resp *dynamicpb.Message) error {
@@ -170,15 +166,4 @@ func (c *Call) printResponse(resp *dynamicpb.Message) error {
 	fmt.Fprintf(c.output, "%v\n", formattedResp)
 
 	return nil
-}
-
-func requestMethod(rpc protoreflect.MethodDescriptor) (string, error) {
-	const minParts = 2
-
-	parts := strings.Split(string(rpc.FullName()), ".")
-	if len(parts) < minParts {
-		return "", ErrInvalidFQN
-	}
-
-	return fmt.Sprintf("/%s/%s", strings.Join(parts[:len(parts)-1], "."), parts[len(parts)-1]), nil
 }

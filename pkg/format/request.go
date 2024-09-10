@@ -15,7 +15,7 @@ type RequestParser interface {
 }
 
 // JSONRequestParser creates a new RequestParser for JSON input.
-func JSONRequestParser(input io.ReadCloser, unmarshalOpts protojson.UnmarshalOptions) RequestParser {
+func JSONRequestParser(input io.Reader, unmarshalOpts protojson.UnmarshalOptions) RequestParser {
 	return &jsonRequestParser{
 		decoder: json.NewDecoder(input),
 		out:     unmarshalOpts,
