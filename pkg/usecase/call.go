@@ -8,8 +8,8 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/dynamicpb"
 
 	"github.com/heartandu/easyrpc/pkg/descriptor"
 	"github.com/heartandu/easyrpc/pkg/format"
@@ -157,7 +157,7 @@ func (c *Call) findMethod(methodName string) (descriptor.Method, error) {
 	return nil, ErrNotAMethod
 }
 
-func (c *Call) printResponse(resp *dynamicpb.Message) error {
+func (c *Call) printResponse(resp proto.Message) error {
 	formattedResp, err := c.rf.Format(resp)
 	if err != nil {
 		return fmt.Errorf("failed to format response: %w", err)

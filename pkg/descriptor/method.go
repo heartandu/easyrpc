@@ -20,7 +20,7 @@ type Method interface {
 	// RequestMessage returns the parsed request message.
 	RequestMessage(rp format.RequestParser) (proto.Message, error)
 	// ResponseMessage returns the response message.
-	ResponseMessage() *dynamicpb.Message
+	ResponseMessage() proto.Message
 	// StreamDesc returns the stream descriptor.
 	StreamDesc() *grpc.StreamDesc
 	// String returns the fully qualified method name.
@@ -53,7 +53,7 @@ func (m *methodWrapper) RequestMessage(rp format.RequestParser) (proto.Message, 
 }
 
 // ResponseMessage returns a new response message instance.
-func (m *methodWrapper) ResponseMessage() *dynamicpb.Message {
+func (m *methodWrapper) ResponseMessage() proto.Message {
 	return dynamicpb.NewMessage(m.rpc.Output())
 }
 
