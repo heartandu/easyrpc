@@ -9,7 +9,7 @@ Currently, this repository is in the early stage of development and is not recom
 ## TODO list
 
 - [x] Basic unary requests support
-- [ ] Client, server and bidi streaming
+- [x] Client, server and bidi streaming
 - [ ] gRPC-Web support
 - [ ] Input validation and error handling
 - [ ] Sensible readme
