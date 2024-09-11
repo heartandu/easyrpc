@@ -12,5 +12,6 @@ Currently, this repository is in the early stage of development and is not recom
 - [x] Client, server and bidi streaming
 - [ ] gRPC-Web support
 - [ ] Input validation and error handling
+- [ ] Colored output
 - [ ] Sensible readme
 - [ ] Build and publish to brew

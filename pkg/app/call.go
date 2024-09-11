@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ktr0731/grpc-web-go-client/grpcweb"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -12,6 +13,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"github.com/heartandu/easyrpc/pkg/conn"
 	"github.com/heartandu/easyrpc/pkg/descriptor"
 	"github.com/heartandu/easyrpc/pkg/format"
 	"github.com/heartandu/easyrpc/pkg/fqn"
@@ -110,7 +112,19 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 	rp := format.JSONRequestParser(input, protojson.UnmarshalOptions{})
 	rf := format.JSONResponseFormatter(protojson.MarshalOptions{Multiline: true})
 
-	callCase := usecase.NewCall(a.cmd.OutOrStdout(), descSrc, clientConn, rp, rf, metadata.New(a.cfg.Request.Metadata))
+	webCC, err := a.clientWebConn()
+	if err != nil {
+		return fmt.Errorf("failed to create web client connection: %w", err)
+	}
+
+	callCase := usecase.NewCall(
+		a.cmd.OutOrStdout(),
+		descSrc,
+		conn.NewWebClient(webCC),
+		rp,
+		rf,
+		metadata.New(a.cfg.Request.Metadata),
+	)
 
 	err = callCase.MakeRPCCall(
 		context.Background(),
@@ -138,6 +152,28 @@ func (a *App) clientConn() (*grpc.ClientConn, error) {
 	}
 
 	return clientConn, nil
+}
+
+func (a *App) clientWebConn() (*grpcweb.ClientConn, error) {
+	opts := []grpcweb.DialOption{}
+
+	if a.cfg.Server.TLS {
+		conf, err := tlsconf.Config(a.cfg.Server.CACert, a.cfg.Server.Cert, a.cfg.Server.CertKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make tls config: %w", err)
+		}
+
+		opts = append(opts, grpcweb.WithTLSConfig(conf))
+	} else {
+		opts = append(opts, grpcweb.WithInsecure())
+	}
+
+	cc, err := grpcweb.DialContext(a.cfg.Server.Address, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial context: %w", err)
+	}
+
+	return cc, nil
 }
 
 func (a *App) transportCredentials() (credentials.TransportCredentials, error) {
