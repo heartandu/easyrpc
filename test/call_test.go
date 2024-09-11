@@ -119,7 +119,7 @@ func TestCall(t *testing.T) {
 				"-a",
 				insecureAddress,
 				"-d",
-				"@",
+				"-",
 				"-r",
 			},
 			in:   strings.NewReader(`{"msg":"stdin test"}`),

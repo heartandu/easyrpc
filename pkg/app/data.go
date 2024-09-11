@@ -20,11 +20,11 @@ func handleDataFlag(fs afero.Fs, cmd *cobra.Command) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("failed to get data flag: %w", err)
 	}
 
-	if strings.HasPrefix(data, "@") {
-		if len(data) == 1 {
-			return io.NopCloser(cmd.InOrStdin()), nil
-		}
+	if data == "-" {
+		return io.NopCloser(cmd.InOrStdin()), nil
+	}
 
+	if strings.HasPrefix(data, "@") {
 		file, err := fs.Open(data[1:])
 		if err != nil {
 			return nil, fmt.Errorf("failed to open file: %w", err)

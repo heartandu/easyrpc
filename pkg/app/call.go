@@ -28,7 +28,6 @@ func (a *App) registerCallCmd() {
 		RunE:              a.runCall,
 	}
 
-	// TODO: consider using - instead of @ for stdin.
 	registerDataFlag(cmd)
 
 	a.cmd.AddCommand(cmd)
