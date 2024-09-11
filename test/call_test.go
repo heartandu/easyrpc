@@ -3,11 +3,13 @@ package test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"strings"
 	"testing"
 
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/require"
 )
 
 // TODO: Add streaming call tests, add more protobuf types to tests.
@@ -69,7 +71,7 @@ func TestCall(t *testing.T) {
 		name string
 		args []string
 		in   io.Reader
-		want string
+		want []map[string]any
 	}{
 		{
 			name: "by proto",
@@ -84,7 +86,7 @@ func TestCall(t *testing.T) {
 				"-p",
 				protoFile,
 			},
-			want: "oops",
+			want: []map[string]any{{"msg": "oops"}},
 		},
 		{
 			name: "by reflection",
@@ -96,7 +98,7 @@ func TestCall(t *testing.T) {
 				`{"msg":"hello"}`,
 				"-r",
 			},
-			want: "hello",
+			want: []map[string]any{{"msg": "hello"}},
 		},
 		{
 			name: "data from file",
@@ -108,7 +110,7 @@ func TestCall(t *testing.T) {
 				"@" + requestFileName,
 				"-r",
 			},
-			want: "file test",
+			want: []map[string]any{{"msg": "file test"}},
 		},
 		{
 			name: "data from stdin",
@@ -121,7 +123,7 @@ func TestCall(t *testing.T) {
 				"-r",
 			},
 			in:   strings.NewReader(`{"msg":"stdin test"}`),
-			want: "stdin test",
+			want: []map[string]any{{"msg": "stdin test"}},
 		},
 		{
 			name: "by proto with config",
@@ -132,7 +134,7 @@ func TestCall(t *testing.T) {
 				"-d",
 				`{"msg":"proto config"}`,
 			},
-			want: "proto config",
+			want: []map[string]any{{"msg": "proto config"}},
 		},
 		{
 			name: "by reflection with config",
@@ -143,7 +145,7 @@ func TestCall(t *testing.T) {
 				"-d",
 				`{"msg":"reflection config"}`,
 			},
-			want: "reflection config",
+			want: []map[string]any{{"msg": "reflection config"}},
 		},
 		{
 			name: "tls with only root certificate",
@@ -158,7 +160,7 @@ func TestCall(t *testing.T) {
 				"--cacert",
 				cacert,
 			},
-			want: "tls",
+			want: []map[string]any{{"msg": "tls"}},
 		},
 		{
 			name: "tls with server certificates",
@@ -177,7 +179,7 @@ func TestCall(t *testing.T) {
 				"--cert-key",
 				certKey,
 			},
-			want: "tls certs",
+			want: []map[string]any{{"msg": "tls certs"}},
 		},
 		{
 			name: "tls with server certificates config",
@@ -188,7 +190,7 @@ func TestCall(t *testing.T) {
 				"-d",
 				`{"msg":"tls certs config"}`,
 			},
-			want: "tls certs config",
+			want: []map[string]any{{"msg": "tls certs config"}},
 		},
 		{
 			name: "package flag specified",
@@ -202,7 +204,7 @@ func TestCall(t *testing.T) {
 				"--package",
 				"echo",
 			},
-			want: "package flag",
+			want: []map[string]any{{"msg": "package flag"}},
 		},
 		{
 			name: "package and service flag specified",
@@ -218,7 +220,7 @@ func TestCall(t *testing.T) {
 				"--service",
 				"EchoService",
 			},
-			want: "package and service flags",
+			want: []map[string]any{{"msg": "package and service flags"}},
 		},
 		{
 			name: "package and service config file specified",
@@ -229,7 +231,7 @@ func TestCall(t *testing.T) {
 				"-d",
 				`{"msg":"package and service flags"}`,
 			},
-			want: "package and service flags",
+			want: []map[string]any{{"msg": "package and service flags"}},
 		},
 		{
 			name: "with metadata flag",
@@ -243,7 +245,7 @@ func TestCall(t *testing.T) {
 				"-H",
 				"test=test",
 			},
-			want: "md flag\ntest",
+			want: []map[string]any{{"msg": "md flag\ntest"}},
 		},
 		{
 			name: "with metadata in config",
@@ -254,7 +256,7 @@ func TestCall(t *testing.T) {
 				"-d",
 				`{"msg":"md flag"}`,
 			},
-			want: "md flag\nconfig",
+			want: []map[string]any{{"msg": "md flag\nconfig"}},
 		},
 		{
 			name: "with metadata flag precedence",
@@ -267,7 +269,49 @@ func TestCall(t *testing.T) {
 				"-H",
 				"test=overwritten",
 			},
-			want: "md flag\noverwritten",
+			want: []map[string]any{{"msg": "md flag\noverwritten"}},
+		},
+		{
+			name: "client streaming request",
+			args: []string{
+				"echo.EchoService.ClientStream",
+				"-r",
+				"-a",
+				insecureAddress,
+				"-d",
+				`{"msg":"1"}{"msg":"3"}{"msg":"2"}`,
+				"-H",
+				"test=321",
+			},
+			want: []map[string]any{{"msgs": []any{"1", "3", "2", "321"}}},
+		},
+		{
+			name: "server streaming request",
+			args: []string{
+				"echo.EchoService.ServerStream",
+				"-r",
+				"-a",
+				insecureAddress,
+				"-d",
+				`{"msgs":["1", "3", "2"]}`,
+				"-H",
+				"test=321",
+			},
+			want: []map[string]any{{"msg": "1"}, {"msg": "3"}, {"msg": "2"}, {"msg": "321"}},
+		},
+		{
+			name: "bidi streaming request",
+			args: []string{
+				"echo.EchoService.BidiStream",
+				"-r",
+				"-a",
+				insecureAddress,
+				"-d",
+				`{"msg":"1"}{"msg":"3"}{"msg":"2"}`,
+				"-H",
+				"test=321",
+			},
+			want: []map[string]any{{"msg": "1"}, {"msg": "3"}, {"msg": "2"}, {"msg": "321"}},
 		},
 	}
 	for _, tt := range tests {
@@ -277,16 +321,23 @@ func TestCall(t *testing.T) {
 				t.Fatalf("command failed: output = %v, err = %v", string(b), err)
 			}
 
-			result := map[string]string{}
-
+			got := []map[string]any{}
 			d := json.NewDecoder(bytes.NewReader(b))
-			if err := d.Decode(&result); err != nil {
-				t.Fatalf("failed to decode output: %v", err)
+
+			for {
+				v := map[string]any{}
+				if err := d.Decode(&v); err != nil {
+					if errors.Is(err, io.EOF) {
+						break
+					}
+
+					t.Fatalf("failed to decode output: %v", err)
+				}
+
+				got = append(got, v)
 			}
 
-			if result["msg"] != tt.want {
-				t.Fatalf("unexpected response: got = %v, want = %v", result["msg"], tt.want)
-			}
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

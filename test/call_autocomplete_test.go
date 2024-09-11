@@ -53,6 +53,9 @@ func TestCallAutocomplete(t *testing.T) {
 			want: []string{
 				"echo.EchoService.Echo",
 				"echo.EchoService.Error",
+				"echo.EchoService.ClientStream",
+				"echo.EchoService.ServerStream",
+				"echo.EchoService.BidiStream",
 			},
 		},
 		{
@@ -66,6 +69,9 @@ func TestCallAutocomplete(t *testing.T) {
 			want: []string{
 				"echo.EchoService.Echo",
 				"echo.EchoService.Error",
+				"echo.EchoService.ClientStream",
+				"echo.EchoService.ServerStream",
+				"echo.EchoService.BidiStream",
 				"grpc.reflection.v1.ServerReflection.ServerReflectionInfo",
 				"grpc.reflection.v1alpha.ServerReflection.ServerReflectionInfo",
 			},
@@ -80,6 +86,9 @@ func TestCallAutocomplete(t *testing.T) {
 			want: []string{
 				"echo.EchoService.Echo",
 				"echo.EchoService.Error",
+				"echo.EchoService.ClientStream",
+				"echo.EchoService.ServerStream",
+				"echo.EchoService.BidiStream",
 			},
 		},
 		{
@@ -92,6 +101,9 @@ func TestCallAutocomplete(t *testing.T) {
 			want: []string{
 				"echo.EchoService.Echo",
 				"echo.EchoService.Error",
+				"echo.EchoService.ClientStream",
+				"echo.EchoService.ServerStream",
+				"echo.EchoService.BidiStream",
 				"grpc.reflection.v1.ServerReflection.ServerReflectionInfo",
 				"grpc.reflection.v1alpha.ServerReflection.ServerReflectionInfo",
 			},

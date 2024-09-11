@@ -7,6 +7,9 @@ option go_package = "./testdata";
 service EchoService {
   rpc Echo(EchoRequest) returns (EchoResponse) {}
   rpc Error(ErrorRequest) returns (ErrorResponse) {}
+  rpc ClientStream(stream ClientStreamRequest) returns (ClientStreamResponse) {}
+  rpc ServerStream(ServerStreamRequest) returns (stream ServerStreamResponse) {}
+  rpc BidiStream(stream BidiStreamRequest) returns (stream BidiStreamResponse) {}
 }
 
 message EchoRequest {
@@ -22,5 +25,29 @@ message ErrorRequest {
 }
 
 message ErrorResponse {
+  string msg = 1;
+}
+
+message ClientStreamRequest {
+  string msg = 1;
+}
+
+message ClientStreamResponse {
+  repeated string msgs = 1;
+}
+
+message ServerStreamRequest {
+  repeated string msgs = 1;
+}
+
+message ServerStreamResponse {
+  string msg = 1;
+}
+
+message BidiStreamRequest {
+  string msg = 1;
+}
+
+message BidiStreamResponse {
   string msg = 1;
 }
