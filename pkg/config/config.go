@@ -4,6 +4,7 @@ package config
 type Config struct {
 	Proto   Proto   `mapstructure:",squash"`
 	Server  Server  `mapstructure:",squash"`
+	TLS     TLS     `mapstructure:",squash"`
 	Request Request `mapstructure:",squash"`
 }
 
@@ -18,10 +19,13 @@ type Server struct {
 	Address    string `mapstructure:"address"`
 	Reflection bool   `mapstructure:"reflection"`
 	Web        bool   `mapstructure:"web"`
-	TLS        bool   `mapstructure:"tls"`
-	CACert     string `mapstructure:"cacert"`
-	Cert       string `mapstructure:"cert"`
-	CertKey    string `mapstructure:"cert_key"`
+}
+
+type TLS struct {
+	Enabled bool   `mapstructure:"tls"`
+	CACert  string `mapstructure:"cacert"`
+	Cert    string `mapstructure:"cert"`
+	Key     string `mapstructure:"key"`
 }
 
 // Request represents a request configuration.

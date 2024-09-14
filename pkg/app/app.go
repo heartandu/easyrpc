@@ -90,8 +90,8 @@ func (a *App) bindPFlags() {
 	a.pflags.BoolP("web", "w", false, "use gRPC-Web client to make requests")
 	a.pflags.Bool("tls", false, "use a secure TLS connection")
 	a.pflags.String("cacert", "", "CA certificate file for verifying the server")
-	a.pflags.String("cert", "", "the certificate file for mutual TLS auth. It must be provided with --cert-key")
-	a.pflags.String("cert-key", "", "the private key for mutual TLS auth. It must be provided with --cert")
+	a.pflags.String("cert", "", "certificate file for mutual TLS auth. It must be provided along with --key")
+	a.pflags.String("key", "", "private key for mutual TLS auth. It must be provided along with --cert")
 	a.pflags.String("package", "", "the package name to use as default")
 	a.pflags.String("service", "", "the service name to use as default")
 	a.pflags.StringToStringP("metadata", "H", nil, "default headers that are attached to every request")
@@ -101,7 +101,7 @@ func (a *App) bindPFlags() {
 func (a *App) bindPFlagsToConfig() {
 	a.viper.BindPFlag("cacert", a.pflags.Lookup("cacert"))            //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("cert", a.pflags.Lookup("cert"))                //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("cert_key", a.pflags.Lookup("cert-key"))        //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("key", a.pflags.Lookup("key"))                  //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("address", a.pflags.Lookup("address"))          //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("reflection", a.pflags.Lookup("reflection"))    //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("web", a.pflags.Lookup("web"))                  //nolint:errcheck // viper flag bind

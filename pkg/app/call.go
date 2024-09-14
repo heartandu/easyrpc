@@ -134,7 +134,7 @@ func (a *App) clientConn() (grpc.ClientConnInterface, error) {
 func (a *App) clientGRPCConn() (*grpc.ClientConn, error) {
 	creds := insecure.NewCredentials()
 
-	if a.cfg.Server.TLS {
+	if a.cfg.TLS.Enabled {
 		conf, err := a.tlsConfig()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get tls config: %w", err)
@@ -154,7 +154,7 @@ func (a *App) clientGRPCConn() (*grpc.ClientConn, error) {
 func (a *App) clientWebConn() (*conn.WebClient, error) {
 	credsOpt := grpcweb.WithInsecure()
 
-	if a.cfg.Server.TLS {
+	if a.cfg.TLS.Enabled {
 		conf, err := a.tlsConfig()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get tls config: %w", err)
@@ -172,7 +172,7 @@ func (a *App) clientWebConn() (*conn.WebClient, error) {
 }
 
 func (a *App) tlsConfig() (*tls.Config, error) {
-	conf, err := tlsconf.Config(a.cfg.Server.CACert, a.cfg.Server.Cert, a.cfg.Server.CertKey)
+	conf, err := tlsconf.Config(a.cfg.TLS.CACert, a.cfg.TLS.Cert, a.cfg.TLS.Key)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make tls config: %w", err)
 	}

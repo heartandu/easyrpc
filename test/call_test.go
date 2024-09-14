@@ -44,7 +44,7 @@ func TestCall(t *testing.T) {
         tls: true
         cacert: `+cacert+`
         cert: `+cert+`
-        cert_key: `+certKey)
+        key: `+key)
 	if err != nil {
 		t.Fatalf("failed to create tls config file: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestCall(t *testing.T) {
         address: `+address(tlsWebSocket)+`
         cacert: `+cacert+`
         cert: `+cert+`
-        cert_key: `+certKey+`
+        key: `+key+`
         reflection: true
         tls: true
         web: true`)
@@ -196,8 +196,8 @@ func TestCall(t *testing.T) {
 				cacert,
 				"--cert",
 				cert,
-				"--cert-key",
-				certKey,
+				"--key",
+				key,
 			},
 			want: []map[string]any{{"msg": "tls certs"}},
 		},

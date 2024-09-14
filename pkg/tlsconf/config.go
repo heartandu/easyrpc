@@ -9,11 +9,16 @@ import (
 )
 
 var (
-	ErrMutualAuthParamsNotComplete = errors.New("cert and certkey are required to authenticate mutually")
-	ErrAppendCerts                 = errors.New("failed to append the client certificate")
+	ErrMutualAuthParamsNotComplete = errors.New("cert and key are required for a mutual authentication")
+	ErrAppendCACert                = errors.New("failed to append CA certificate")
 )
 
-func Config(cacert, cert, certKey string) (*tls.Config, error) {
+// Config creates a TLS configuration based on the provided certificates and a key.
+// Parameters:
+// - cacert: path to the CA certificate file (optional),
+// - cert: path to the client certificate file (optional),
+// - key: path to the client certificate key file (optional).
+func Config(cacert, cert, key string) (*tls.Config, error) {
 	var tlsCfg tls.Config
 
 	if cacert != "" {
@@ -24,21 +29,21 @@ func Config(cacert, cert, certKey string) (*tls.Config, error) {
 
 		cp := x509.NewCertPool()
 		if !cp.AppendCertsFromPEM(certBytes) {
-			return nil, ErrAppendCerts
+			return nil, ErrAppendCACert
 		}
 
 		tlsCfg.RootCAs = cp
 	}
 
-	if cert != "" && certKey != "" {
+	if cert != "" && key != "" {
 		// Enable mutual authentication
-		certificate, err := tls.LoadX509KeyPair(cert, certKey)
+		certificate, err := tls.LoadX509KeyPair(cert, key)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read the client certificate: %w", err)
 		}
 
 		tlsCfg.Certificates = append(tlsCfg.Certificates, certificate)
-	} else if cert != "" || certKey != "" {
+	} else if cert != "" || key != "" {
 		return nil, ErrMutualAuthParamsNotComplete
 	}
 

@@ -11,14 +11,17 @@ import (
 
 var ErrNotAStreamRequest = errors.New("not a stream request")
 
+// WebClient is an adapter for a gRPC-Web client.
 type WebClient struct {
 	cc *grpcweb.ClientConn
 }
 
+// NewWebClient creates a new WebClient.
 func NewWebClient(cc *grpcweb.ClientConn) *WebClient {
 	return &WebClient{cc: cc}
 }
 
+// Invoke makes a unary gRPC call to the server.
 func (c *WebClient) Invoke(ctx context.Context, method string, args, reply any, _ ...grpc.CallOption) error {
 	if err := c.cc.Invoke(ctx, method, args, reply); err != nil {
 		return fmt.Errorf("failed to call wrapped invoke: %w", err)
@@ -27,6 +30,7 @@ func (c *WebClient) Invoke(ctx context.Context, method string, args, reply any, 
 	return nil
 }
 
+// NewStream creates a new client stream for making streaming gRPC calls to the server.
 func (c *WebClient) NewStream(
 	ctx context.Context,
 	desc *grpc.StreamDesc,

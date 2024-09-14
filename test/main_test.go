@@ -31,9 +31,9 @@ const (
 	tlsWebSocket      = ":50003"
 	protocol          = "tcp"
 
-	cacert  = "../internal/testdata/rootCA.crt"
-	cert    = "../internal/testdata/localhost.crt"
-	certKey = "../internal/testdata/localhost.key"
+	cacert = "../internal/testdata/rootCA.crt"
+	cert   = "../internal/testdata/localhost.crt"
+	key    = "../internal/testdata/localhost.key"
 
 	importPath = "../internal/testdata"
 	protoFile  = "test.proto"
@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 }
 
 func runTest(m *testing.M) int {
-	cfg, err := tlsconf.Config(cacert, cert, certKey)
+	cfg, err := tlsconf.Config(cacert, cert, key)
 	if err != nil {
 		log.Printf("failed to get tls config: %v", err)
 		return 1
