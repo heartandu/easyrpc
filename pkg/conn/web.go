@@ -7,7 +7,6 @@ import (
 
 	"github.com/heartandu/grpc-web-go-client/grpcweb"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 var ErrNotAStreamRequest = errors.New("not a stream request")
@@ -17,18 +16,23 @@ type WebClient struct {
 }
 
 func NewWebClient(cc *grpcweb.ClientConn) *WebClient {
-	return &WebClient{
-		cc: cc,
-	}
+	return &WebClient{cc: cc}
 }
 
-func (c *WebClient) Invoke(ctx context.Context, method string, args any, reply any) error {
+func (c *WebClient) Invoke(ctx context.Context, method string, args any, reply any, _ ...grpc.CallOption) error {
 	return c.cc.Invoke(ctx, method, args, reply)
 }
 
-func (c *WebClient) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string) (ClientStream, error) {
-	var stream grpcweb.Stream
-	var err error
+func (c *WebClient) NewStream(
+	ctx context.Context,
+	desc *grpc.StreamDesc,
+	method string,
+	_ ...grpc.CallOption,
+) (grpc.ClientStream, error) {
+	var (
+		stream grpcweb.Stream
+		err    error
+	)
 
 	switch {
 	case desc.ClientStreams && desc.ServerStreams:
@@ -50,33 +54,5 @@ func (c *WebClient) NewStream(ctx context.Context, desc *grpc.StreamDesc, method
 		return nil, ErrNotAStreamRequest
 	}
 
-	return &webStream{stream}, nil
-}
-
-type webStream struct {
-	stream grpcweb.Stream
-}
-
-func (s *webStream) Header() (metadata.MD, error) {
-	return s.stream.Header()
-}
-
-func (s *webStream) Trailer() metadata.MD {
-	return s.stream.Trailer()
-}
-
-func (s *webStream) CloseSend() error {
-	return s.stream.CloseSend()
-}
-
-func (s *webStream) Context() context.Context {
-	return s.stream.Context()
-}
-
-func (s *webStream) SendMsg(m any) error {
-	return s.stream.SendMsg(m)
-}
-
-func (s *webStream) RecvMsg(m any) error {
-	return s.stream.RecvMsg(m)
+	return stream, nil
 }

@@ -99,7 +99,7 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
 
-	clientConn, err := a.clientConn()
+	clientConn, err := a.clientWebConn()
 	if err != nil {
 		return fmt.Errorf("failed to create grpc client connection: %w", err)
 	}
@@ -112,15 +112,10 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 	rp := format.JSONRequestParser(input, protojson.UnmarshalOptions{})
 	rf := format.JSONResponseFormatter(protojson.MarshalOptions{Multiline: true})
 
-	webCC, err := a.clientWebConn()
-	if err != nil {
-		return fmt.Errorf("failed to create web client connection: %w", err)
-	}
-
 	callCase := usecase.NewCall(
 		a.cmd.OutOrStdout(),
 		descSrc,
-		conn.NewWebClient(webCC),
+		clientConn,
 		rp,
 		rf,
 		metadata.New(a.cfg.Request.Metadata),
@@ -154,7 +149,7 @@ func (a *App) clientConn() (*grpc.ClientConn, error) {
 	return clientConn, nil
 }
 
-func (a *App) clientWebConn() (*grpcweb.ClientConn, error) {
+func (a *App) clientWebConn() (grpc.ClientConnInterface, error) {
 	opts := []grpcweb.DialOption{}
 
 	if a.cfg.Server.TLS {
@@ -173,7 +168,7 @@ func (a *App) clientWebConn() (*grpcweb.ClientConn, error) {
 		return nil, fmt.Errorf("failed to dial context: %w", err)
 	}
 
-	return cc, nil
+	return conn.NewWebClient(cc), nil
 }
 
 func (a *App) transportCredentials() (credentials.TransportCredentials, error) {
@@ -189,7 +184,7 @@ func (a *App) transportCredentials() (credentials.TransportCredentials, error) {
 	return insecure.NewCredentials(), nil
 }
 
-func (a *App) descriptorSource(ctx context.Context, clientConn *grpc.ClientConn) (descriptor.Source, error) {
+func (a *App) descriptorSource(ctx context.Context, clientConn grpc.ClientConnInterface) (descriptor.Source, error) {
 	var (
 		descSrc descriptor.Source
 		err     error

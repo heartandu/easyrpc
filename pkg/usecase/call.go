@@ -11,7 +11,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"github.com/heartandu/easyrpc/pkg/conn"
 	"github.com/heartandu/easyrpc/pkg/descriptor"
 	"github.com/heartandu/easyrpc/pkg/format"
 )
@@ -20,7 +19,7 @@ import (
 type Call struct {
 	output io.Writer
 	ds     descriptor.Source
-	cc     conn.Client
+	cc     grpc.ClientConnInterface
 	rp     format.RequestParser
 	rf     format.ResponseFormatter
 	md     metadata.MD
@@ -30,7 +29,7 @@ type Call struct {
 func NewCall(
 	output io.Writer,
 	descSrc descriptor.Source,
-	clientConn conn.Client,
+	clientConn grpc.ClientConnInterface,
 	reqParser format.RequestParser,
 	respFormatter format.ResponseFormatter,
 	md metadata.MD,
