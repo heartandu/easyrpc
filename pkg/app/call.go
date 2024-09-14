@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ktr0731/grpc-web-go-client/grpcweb"
+	"github.com/heartandu/grpc-web-go-client/grpcweb"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

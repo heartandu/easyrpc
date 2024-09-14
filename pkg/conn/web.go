@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ktr0731/grpc-web-go-client/grpcweb"
+	"github.com/heartandu/grpc-web-go-client/grpcweb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -27,116 +27,56 @@ func (c *WebClient) Invoke(ctx context.Context, method string, args any, reply a
 }
 
 func (c *WebClient) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string) (ClientStream, error) {
+	var stream grpcweb.Stream
+	var err error
+
 	switch {
 	case desc.ClientStreams && desc.ServerStreams:
-		stream, err := c.cc.NewBidiStream(desc, method)
+		stream, err = c.cc.NewBidiStream(ctx, desc, method)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create bidi stream: %w", err)
 		}
-
-		return &webBidiStream{ctx: ctx, stream: stream}, nil
 	case desc.ClientStreams:
-		stream, err := c.cc.NewClientStream(desc, method)
+		stream, err = c.cc.NewClientStream(ctx, desc, method)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create client stream: %w", err)
 		}
-
-		return &webClientStream{ctx: ctx, stream: stream}, nil
 	case desc.ServerStreams:
-		stream, err := c.cc.NewServerStream(desc, method)
+		stream, err = c.cc.NewServerStream(ctx, desc, method)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create server stream: %w", err)
 		}
-
-		return &webServerStream{ctx: ctx, stream: stream}, nil
 	default:
 		return nil, ErrNotAStreamRequest
 	}
+
+	return &webStream{stream}, nil
 }
 
-type webClientStream struct {
-	ctx    context.Context
-	stream grpcweb.ClientStream
+type webStream struct {
+	stream grpcweb.Stream
 }
 
-func (s *webClientStream) Header() (metadata.MD, error) {
+func (s *webStream) Header() (metadata.MD, error) {
 	return s.stream.Header()
 }
 
-func (s *webClientStream) Trailer() metadata.MD {
+func (s *webStream) Trailer() metadata.MD {
 	return s.stream.Trailer()
 }
 
-func (s *webClientStream) CloseSend() error {
-	return nil
-}
-
-func (s *webClientStream) Context() context.Context {
-	return s.ctx
-}
-
-func (s *webClientStream) SendMsg(m any) error {
-	return s.stream.Send(s.ctx, m)
-}
-
-func (s *webClientStream) RecvMsg(m any) error {
-	return s.stream.CloseAndReceive(s.ctx, m)
-}
-
-type webServerStream struct {
-	ctx    context.Context
-	stream grpcweb.ServerStream
-}
-
-func (s *webServerStream) Header() (metadata.MD, error) {
-	return s.stream.Header()
-}
-
-func (s *webServerStream) Trailer() metadata.MD {
-	return s.stream.Trailer()
-}
-
-func (s *webServerStream) CloseSend() error {
-	return nil
-}
-
-func (s *webServerStream) Context() context.Context {
-	return s.ctx
-}
-
-func (s *webServerStream) SendMsg(m any) error {
-	return s.stream.Send(s.ctx, m)
-}
-
-func (s *webServerStream) RecvMsg(m any) error {
-	return s.stream.Receive(s.ctx, m)
-}
-
-type webBidiStream struct {
-	ctx    context.Context
-	stream grpcweb.BidiStream
-}
-
-func (s *webBidiStream) Header() (metadata.MD, error) {
-	return s.stream.Header()
-}
-
-func (s *webBidiStream) Trailer() metadata.MD {
-	return s.stream.Trailer()
-}
-
-func (s *webBidiStream) CloseSend() error {
+func (s *webStream) CloseSend() error {
 	return s.stream.CloseSend()
 }
 
-func (s *webBidiStream) Context() context.Context {
-	return s.ctx
+func (s *webStream) Context() context.Context {
+	return s.stream.Context()
 }
 
-func (s *webBidiStream) SendMsg(m any) error {
-	return s.stream.Send(s.ctx, m)
+func (s *webStream) SendMsg(m any) error {
+	return s.stream.SendMsg(m)
 }
 
-func (s *webBidiStream) RecvMsg(m any) error {
-	return s.stream.Receive(s.ctx, m)
+func (s *webStream) RecvMsg(m any) error {
+	return s.stream.RecvMsg(m)
 }
