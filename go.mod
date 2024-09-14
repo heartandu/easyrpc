@@ -2,11 +2,9 @@ module github.com/heartandu/easyrpc
 
 go 1.23.1
 
-replace github.com/heartandu/grpc-web-go-client v0.0.0-20240914064354-3f978ff50f32 => /home/heart/dev/github.com/heartandu/grpc-web-go-client
-
 require (
 	github.com/bufbuild/protocompile v0.14.1
-	github.com/heartandu/grpc-web-go-client v0.0.0-20240914064354-3f978ff50f32
+	github.com/heartandu/grpc-web-go-client v0.0.0-20240914113410-f3d11955c59b
 	github.com/jhump/protoreflect v1.17.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
