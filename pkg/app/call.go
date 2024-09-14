@@ -48,12 +48,12 @@ func (a *App) callAutocomplete(
 
 	ctx := context.Background()
 
-	clientConn, err := a.clientConn()
+	cc, err := a.clientConn()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	descSrc, err := a.descriptorSource(ctx, clientConn)
+	descSrc, err := a.descriptorSource(ctx, cc)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -99,12 +99,12 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
 
-	clientConn, err := a.clientWebConn()
+	cc, err := a.clientConn()
 	if err != nil {
 		return fmt.Errorf("failed to create grpc client connection: %w", err)
 	}
 
-	descSrc, err := a.descriptorSource(ctx, clientConn)
+	descSrc, err := a.descriptorSource(ctx, cc)
 	if err != nil {
 		return fmt.Errorf("failed to create descriptor source: %w", err)
 	}
@@ -115,7 +115,7 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 	callCase := usecase.NewCall(
 		a.cmd.OutOrStdout(),
 		descSrc,
-		clientConn,
+		cc,
 		rp,
 		rf,
 		metadata.New(a.cfg.Request.Metadata),
@@ -132,7 +132,15 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (a *App) clientConn() (*grpc.ClientConn, error) {
+func (a *App) clientConn() (grpc.ClientConnInterface, error) {
+	if a.cfg.Server.Web {
+		return a.clientWebConn()
+	}
+
+	return a.clientGRPCConn()
+}
+
+func (a *App) clientGRPCConn() (*grpc.ClientConn, error) {
 	creds, err := a.transportCredentials()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transport credentials: %w", err)
@@ -149,7 +157,7 @@ func (a *App) clientConn() (*grpc.ClientConn, error) {
 	return clientConn, nil
 }
 
-func (a *App) clientWebConn() (grpc.ClientConnInterface, error) {
+func (a *App) clientWebConn() (*conn.WebClient, error) {
 	opts := []grpcweb.DialOption{}
 
 	if a.cfg.Server.TLS {

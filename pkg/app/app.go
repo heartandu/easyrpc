@@ -87,6 +87,7 @@ func (a *App) bindPFlags() {
 		"proto files to use, can provide multiple files by repeating the flag",
 	)
 	a.pflags.BoolP("reflection", "r", false, "use server reflection to make requests")
+	a.pflags.BoolP("web", "w", false, "use gRPC-Web client to make requests")
 	a.pflags.Bool("tls", false, "use a secure TLS connection")
 	a.pflags.String("cacert", "", "CA certificate file for verifying the server")
 	a.pflags.String("cert", "", "the certificate file for mutual TLS auth. It must be provided with --cert-key")
@@ -103,6 +104,7 @@ func (a *App) bindPFlagsToConfig() {
 	a.viper.BindPFlag("cert_key", a.pflags.Lookup("cert-key"))        //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("address", a.pflags.Lookup("address"))          //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("reflection", a.pflags.Lookup("reflection"))    //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("web", a.pflags.Lookup("web"))                  //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("tls", a.pflags.Lookup("tls"))                  //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("import_paths", a.pflags.Lookup("import-path")) //nolint:errcheck // viper flag bind
 	a.viper.BindPFlag("proto_files", a.pflags.Lookup("proto-file"))   //nolint:errcheck // viper flag bind

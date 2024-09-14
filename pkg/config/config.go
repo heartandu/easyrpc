@@ -17,6 +17,7 @@ type Proto struct {
 type Server struct {
 	Address    string `mapstructure:"address"`
 	Reflection bool   `mapstructure:"reflection"`
+	Web        bool   `mapstructure:"web"`
 	TLS        bool   `mapstructure:"tls"`
 	CACert     string `mapstructure:"cacert"`
 	Cert       string `mapstructure:"cert"`
