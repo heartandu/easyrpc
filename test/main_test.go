@@ -2,14 +2,17 @@ package test
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"testing"
 
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -22,15 +25,15 @@ import (
 )
 
 const (
-	insecureSocket  = ":50000"
-	tlsSocket       = ":50001"
-	protocol        = "tcp"
-	insecureAddress = "localhost" + insecureSocket
-	tlsAddress      = "localhost" + tlsSocket
+	insecureSocket    = ":50000"
+	tlsSocket         = ":50001"
+	insecureWebSocket = ":50002"
+	tlsWebSocket      = ":50003"
+	protocol          = "tcp"
 
-	cacert  = "../internal/testdata/rootCA.crt"
-	cert    = "../internal/testdata/localhost.crt"
-	certKey = "../internal/testdata/localhost.key"
+	cacert = "../internal/testdata/rootCA.crt"
+	cert   = "../internal/testdata/localhost.crt"
+	key    = "../internal/testdata/localhost.key"
 
 	importPath = "../internal/testdata"
 	protoFile  = "test.proto"
@@ -41,38 +44,54 @@ func TestMain(m *testing.M) {
 }
 
 func runTest(m *testing.M) int {
-	cfg, err := tlsconf.Config(cacert, cert, certKey)
+	cfg, err := tlsconf.Config(cacert, cert, key)
 	if err != nil {
 		log.Printf("failed to get tls config: %v", err)
 		return 1
 	}
 
-	insecureServer, err := serve(protocol, insecureSocket)
-	if err != nil {
+	insecureServer := newServer()
+	defer insecureServer.Stop()
+
+	tlsServer := newServer(grpc.Creds(credentials.NewTLS(cfg)))
+	defer tlsServer.Stop()
+
+	if err := serve(insecureServer, protocol, insecureSocket); err != nil {
 		log.Printf("failed to serve insecure server: %v", err)
 		return 1
 	}
-	defer insecureServer.Stop()
 
-	tlsServer, err := serve(protocol, tlsSocket, grpc.Creds(credentials.NewTLS(cfg)))
-	if err != nil {
+	if err := serve(tlsServer, protocol, tlsSocket); err != nil {
 		log.Printf("failed to serve tls server: %v", err)
 		return 1
 	}
-	defer tlsServer.Stop()
+
+	if err := serveWeb(grpcweb.WrapServer(insecureServer), protocol, insecureWebSocket, nil); err != nil {
+		log.Printf("failed to serve insecure web server: %v", err)
+		return 1
+	}
+
+	if err := serveWeb(grpcweb.WrapServer(insecureServer), protocol, tlsWebSocket, cfg); err != nil {
+		log.Printf("failed to serve tls web server: %v", err)
+		return 1
+	}
 
 	return m.Run()
 }
 
-func serve(protocol, socket string, opts ...grpc.ServerOption) (*grpc.Server, error) {
-	lis, err := net.Listen(protocol, socket)
-	if err != nil {
-		return nil, fmt.Errorf("failed to listen: %w", err)
-	}
-
+func newServer(opts ...grpc.ServerOption) *grpc.Server {
 	s := grpc.NewServer(opts...)
 	testdata.RegisterEchoServiceServer(s, &server{})
 	reflection.Register(s)
+
+	return s
+}
+
+func serve(s *grpc.Server, protocol, socket string) error {
+	lis, err := net.Listen(protocol, socket)
+	if err != nil {
+		return fmt.Errorf("failed to listen: %w", err)
+	}
 
 	go func() {
 		if err := s.Serve(lis); err != nil {
@@ -80,7 +99,46 @@ func serve(protocol, socket string, opts ...grpc.ServerOption) (*grpc.Server, er
 		}
 	}()
 
-	return s, nil
+	return nil
+}
+
+func serveWeb(s *grpcweb.WrappedGrpcServer, protocol, socket string, tlsCfg *tls.Config) error {
+	srv := http.Server{
+		Handler: http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+			if s.IsGrpcWebSocketRequest(req) {
+				s.HandleGrpcWebsocketRequest(resp, req)
+				return
+			}
+
+			if s.IsGrpcWebRequest(req) {
+				s.HandleGrpcWebRequest(resp, req)
+				return
+			}
+
+			// Fall back to other servers.
+			http.DefaultServeMux.ServeHTTP(resp, req)
+		}),
+		TLSConfig: tlsCfg,
+	}
+
+	lis, err := net.Listen(protocol, socket)
+	if err != nil {
+		return fmt.Errorf("failed to listen: %w", err)
+	}
+
+	go func() {
+		if tlsCfg != nil {
+			if err := srv.ServeTLS(lis, "", ""); err != nil {
+				log.Fatalf("serve tls error: %v", err)
+			}
+		} else {
+			if err := srv.Serve(lis); err != nil {
+				log.Fatalf("serve error: %v", err)
+			}
+		}
+	}()
+
+	return nil
 }
 
 type server struct {
@@ -188,4 +246,8 @@ func (*server) getTestMDKey(ctx context.Context) string {
 	}
 
 	return ""
+}
+
+func address(socket string) string {
+	return "localhost" + socket
 }

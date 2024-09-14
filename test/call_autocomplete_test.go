@@ -24,7 +24,7 @@ func TestCallAutocomplete(t *testing.T) {
 	}
 
 	reflectConf, err := createTempFile(fs, "reflet-autocomp.yaml", `
-        address: `+insecureAddress+`
+        address: `+address(insecureSocket)+`
         reflection: true
     `)
 	if err != nil {
@@ -63,7 +63,7 @@ func TestCallAutocomplete(t *testing.T) {
 			args: []string{
 				"-r",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
 				"",
 			},
 			want: []string{
@@ -113,7 +113,7 @@ func TestCallAutocomplete(t *testing.T) {
 			args: []string{
 				"-r",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
 				"err",
 			},
 			want: []string{
@@ -127,11 +127,48 @@ func TestCallAutocomplete(t *testing.T) {
 			args: []string{
 				"-r",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
 				"Err",
 			},
 			want: []string{
 				"echo.EchoService.Error",
+			},
+		},
+		{
+			name: "partial completion over web reflection",
+			args: []string{
+				"-r",
+				"-a",
+				address(insecureWebSocket),
+				"-w",
+				"err",
+			},
+			want: []string{
+				"echo.EchoService.Error",
+				"grpc.reflection.v1.ServerReflection.ServerReflectionInfo",
+				"grpc.reflection.v1alpha.ServerReflection.ServerReflectionInfo",
+			},
+		},
+		{
+			name: "partial completion over tls web reflection",
+			args: []string{
+				"-r",
+				"-a",
+				address(tlsWebSocket),
+				"--tls",
+				"--cacert",
+				cacert,
+				"--cert",
+				cert,
+				"--key",
+				key,
+				"-w",
+				"err",
+			},
+			want: []string{
+				"echo.EchoService.Error",
+				"grpc.reflection.v1.ServerReflection.ServerReflectionInfo",
+				"grpc.reflection.v1alpha.ServerReflection.ServerReflectionInfo",
 			},
 		},
 	}

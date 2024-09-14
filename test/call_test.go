@@ -22,7 +22,7 @@ func TestCall(t *testing.T) {
 	}
 
 	protoConfigFileName, err := createTempFile(fs, "proto.yaml", `
-        address: `+insecureAddress+`
+        address: `+address(insecureSocket)+`
         import_paths:
           - `+importPath+`
         proto_files:
@@ -32,25 +32,25 @@ func TestCall(t *testing.T) {
 	}
 
 	reflectionConfigFileName, err := createTempFile(fs, "reflect.yaml", `
-        address: `+insecureAddress+`
+        address: `+address(insecureSocket)+`
         reflection: true`)
 	if err != nil {
 		t.Fatalf("failed to create proto config file: %v", err)
 	}
 
 	tlsConfigFileName, err := createTempFile(fs, "tls.yaml", `
-        address: `+tlsAddress+`
+        address: `+address(tlsSocket)+`
         reflection: true
         tls: true
         cacert: `+cacert+`
         cert: `+cert+`
-        cert_key: `+certKey)
+        key: `+key)
 	if err != nil {
 		t.Fatalf("failed to create tls config file: %v", err)
 	}
 
 	packageAndServiceConfigFileName, err := createTempFile(fs, "pns.yaml", `
-        address: `+insecureAddress+`
+        address: `+address(insecureSocket)+`
         reflection: true
         package: echo
         service: EchoService`)
@@ -59,10 +59,30 @@ func TestCall(t *testing.T) {
 	}
 
 	mdConfigFileName, err := createTempFile(fs, "md.yaml", `
-        address: `+insecureAddress+`
+        address: `+address(insecureSocket)+`
         reflection: true
         metadata:
           test: config`)
+	if err != nil {
+		t.Fatalf("failed to create metadata config file: %v", err)
+	}
+
+	webConfigFileName, err := createTempFile(fs, "web.yaml", `
+        address: `+address(insecureWebSocket)+`
+        reflection: true
+        web: true`)
+	if err != nil {
+		t.Fatalf("failed to create metadata config file: %v", err)
+	}
+
+	webTLSConfigFileName, err := createTempFile(fs, "webTLS.yaml", `
+        address: `+address(tlsWebSocket)+`
+        cacert: `+cacert+`
+        cert: `+cert+`
+        key: `+key+`
+        reflection: true
+        tls: true
+        web: true`)
 	if err != nil {
 		t.Fatalf("failed to create metadata config file: %v", err)
 	}
@@ -78,7 +98,7 @@ func TestCall(t *testing.T) {
 			args: []string{
 				"echo.EchoService.Echo",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
 				"-d",
 				`{"msg":"oops"}`,
 				"-i",
@@ -93,7 +113,7 @@ func TestCall(t *testing.T) {
 			args: []string{
 				"echo.EchoService.Echo",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
 				"-d",
 				`{"msg":"hello"}`,
 				"-r",
@@ -105,7 +125,7 @@ func TestCall(t *testing.T) {
 			args: []string{
 				"echo.EchoService.Echo",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
 				"-d",
 				"@" + requestFileName,
 				"-r",
@@ -117,7 +137,7 @@ func TestCall(t *testing.T) {
 			args: []string{
 				"echo.EchoService.Echo",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
 				"-d",
 				"-",
 				"-r",
@@ -152,7 +172,7 @@ func TestCall(t *testing.T) {
 			args: []string{
 				"echo.EchoService.Echo",
 				"-a",
-				tlsAddress,
+				address(tlsSocket),
 				"-d",
 				`{"msg":"tls"}`,
 				"-r",
@@ -167,7 +187,7 @@ func TestCall(t *testing.T) {
 			args: []string{
 				"echo.EchoService.Echo",
 				"-a",
-				tlsAddress,
+				address(tlsSocket),
 				"-d",
 				`{"msg":"tls certs"}`,
 				"-r",
@@ -176,8 +196,8 @@ func TestCall(t *testing.T) {
 				cacert,
 				"--cert",
 				cert,
-				"--cert-key",
-				certKey,
+				"--key",
+				key,
 			},
 			want: []map[string]any{{"msg": "tls certs"}},
 		},
@@ -197,7 +217,7 @@ func TestCall(t *testing.T) {
 			args: []string{
 				"EchoService.Echo",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
 				"-d",
 				`{"msg":"package flag"}`,
 				"-r",
@@ -211,7 +231,7 @@ func TestCall(t *testing.T) {
 			args: []string{
 				"Echo",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
 				"-d",
 				`{"msg":"package and service flags"}`,
 				"-r",
@@ -239,7 +259,7 @@ func TestCall(t *testing.T) {
 				"echo.EchoService.Echo",
 				"-r",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
 				"-d",
 				`{"msg":"md flag"}`,
 				"-H",
@@ -277,7 +297,7 @@ func TestCall(t *testing.T) {
 				"echo.EchoService.ClientStream",
 				"-r",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
 				"-d",
 				`{"msg":"1"}{"msg":"3"}{"msg":"2"}`,
 				"-H",
@@ -291,7 +311,7 @@ func TestCall(t *testing.T) {
 				"echo.EchoService.ServerStream",
 				"-r",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
 				"-d",
 				`{"msgs":["1", "3", "2"]}`,
 				"-H",
@@ -305,7 +325,73 @@ func TestCall(t *testing.T) {
 				"echo.EchoService.BidiStream",
 				"-r",
 				"-a",
-				insecureAddress,
+				address(insecureSocket),
+				"-d",
+				`{"msg":"1"}{"msg":"3"}{"msg":"2"}`,
+				"-H",
+				"test=321",
+			},
+			want: []map[string]any{{"msg": "1"}, {"msg": "3"}, {"msg": "2"}, {"msg": "321"}},
+		},
+		{
+			name: "web unary request with config",
+			args: []string{
+				"echo.EchoService.Echo",
+				"--config",
+				webConfigFileName,
+				"-d",
+				`{"msg":"web config"}`,
+			},
+			want: []map[string]any{{"msg": "web config"}},
+		},
+		{
+			name: "web unary request",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureWebSocket),
+				"-w",
+				"-i",
+				importPath,
+				"-p",
+				protoFile,
+				"-d",
+				`{"msg":"web unary"}`,
+			},
+			want: []map[string]any{{"msg": "web unary"}},
+		},
+		{
+			name: "web client streaming request",
+			args: []string{
+				"echo.EchoService.ClientStream",
+				"--config",
+				webTLSConfigFileName,
+				"-H",
+				"test=321",
+				"-d",
+				`{"msg":"1"}{"msg":"3"}{"msg":"2"}`,
+			},
+			want: []map[string]any{{"msgs": []any{"1", "3", "2", "321"}}},
+		},
+		{
+			name: "web server streaming request",
+			args: []string{
+				"echo.EchoService.ServerStream",
+				"--config",
+				webTLSConfigFileName,
+				"-d",
+				`{"msgs":["1", "3", "2"]}`,
+				"-H",
+				"test=321",
+			},
+			want: []map[string]any{{"msg": "1"}, {"msg": "3"}, {"msg": "2"}, {"msg": "321"}},
+		},
+		{
+			name: "web bidi streaming request",
+			args: []string{
+				"echo.EchoService.BidiStream",
+				"--config",
+				webTLSConfigFileName,
 				"-d",
 				`{"msg":"1"}{"msg":"3"}{"msg":"2"}`,
 				"-H",

@@ -2,9 +2,11 @@ package app
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"strings"
 
+	"github.com/heartandu/grpc-web-go-client/grpcweb"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -12,6 +14,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"github.com/heartandu/easyrpc/pkg/conn"
 	"github.com/heartandu/easyrpc/pkg/descriptor"
 	"github.com/heartandu/easyrpc/pkg/format"
 	"github.com/heartandu/easyrpc/pkg/fqn"
@@ -46,12 +49,12 @@ func (a *App) callAutocomplete(
 
 	ctx := context.Background()
 
-	clientConn, err := a.clientConn()
+	cc, err := a.clientConn()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	descSrc, err := a.descriptorSource(ctx, clientConn)
+	descSrc, err := a.descriptorSource(ctx, cc)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -97,12 +100,12 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
 
-	clientConn, err := a.clientConn()
+	cc, err := a.clientConn()
 	if err != nil {
 		return fmt.Errorf("failed to create grpc client connection: %w", err)
 	}
 
-	descSrc, err := a.descriptorSource(ctx, clientConn)
+	descSrc, err := a.descriptorSource(ctx, cc)
 	if err != nil {
 		return fmt.Errorf("failed to create descriptor source: %w", err)
 	}
@@ -110,12 +113,9 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 	rp := format.JSONRequestParser(input, protojson.UnmarshalOptions{})
 	rf := format.JSONResponseFormatter(protojson.MarshalOptions{Multiline: true})
 
-	callCase := usecase.NewCall(a.cmd.OutOrStdout(), descSrc, clientConn, rp, rf, metadata.New(a.cfg.Request.Metadata))
+	call := usecase.NewCall(a.cmd.OutOrStdout(), descSrc, cc, rp, rf, metadata.New(a.cfg.Request.Metadata))
 
-	err = callCase.MakeRPCCall(
-		context.Background(),
-		fqn.FullyQualifiedMethodName(args[0], a.cfg.Request.Package, a.cfg.Request.Service),
-	)
+	err = call.MakeRPCCall(ctx, fqn.FullyQualifiedMethodName(args[0], a.cfg.Request.Package, a.cfg.Request.Service))
 	if err != nil {
 		return fmt.Errorf("call rpc failed: %w", err)
 	}
@@ -123,16 +123,27 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (a *App) clientConn() (*grpc.ClientConn, error) {
-	creds, err := a.transportCredentials()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get transport credentials: %w", err)
+func (a *App) clientConn() (grpc.ClientConnInterface, error) {
+	if a.cfg.Server.Web {
+		return a.clientWebConn()
 	}
 
-	clientConn, err := grpc.NewClient(
-		a.cfg.Server.Address,
-		grpc.WithTransportCredentials(creds),
-	)
+	return a.clientGRPCConn()
+}
+
+func (a *App) clientGRPCConn() (*grpc.ClientConn, error) {
+	creds := insecure.NewCredentials()
+
+	if a.cfg.TLS.Enabled {
+		conf, err := a.tlsConfig()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get tls config: %w", err)
+		}
+
+		creds = credentials.NewTLS(conf)
+	}
+
+	clientConn, err := grpc.NewClient(a.cfg.Server.Address, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
@@ -140,20 +151,36 @@ func (a *App) clientConn() (*grpc.ClientConn, error) {
 	return clientConn, nil
 }
 
-func (a *App) transportCredentials() (credentials.TransportCredentials, error) {
-	if a.cfg.Server.TLS {
-		conf, err := tlsconf.Config(a.cfg.Server.CACert, a.cfg.Server.Cert, a.cfg.Server.CertKey)
+func (a *App) clientWebConn() (*conn.WebClient, error) {
+	credsOpt := grpcweb.WithInsecure()
+
+	if a.cfg.TLS.Enabled {
+		conf, err := a.tlsConfig()
 		if err != nil {
-			return nil, fmt.Errorf("failed to make tls config: %w", err)
+			return nil, fmt.Errorf("failed to get tls config: %w", err)
 		}
 
-		return credentials.NewTLS(conf), nil
+		credsOpt = grpcweb.WithTLSConfig(conf)
 	}
 
-	return insecure.NewCredentials(), nil
+	cc, err := grpcweb.NewClient(a.cfg.Server.Address, credsOpt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial context: %w", err)
+	}
+
+	return conn.NewWebClient(cc), nil
 }
 
-func (a *App) descriptorSource(ctx context.Context, clientConn *grpc.ClientConn) (descriptor.Source, error) {
+func (a *App) tlsConfig() (*tls.Config, error) {
+	conf, err := tlsconf.Config(a.cfg.TLS.CACert, a.cfg.TLS.Cert, a.cfg.TLS.Key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make tls config: %w", err)
+	}
+
+	return conf, nil
+}
+
+func (a *App) descriptorSource(ctx context.Context, clientConn grpc.ClientConnInterface) (descriptor.Source, error) {
 	var (
 		descSrc descriptor.Source
 		err     error
