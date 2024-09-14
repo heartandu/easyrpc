@@ -10,7 +10,7 @@ Currently, this repository is in the early stage of development and is not recom
 
 - [x] Basic unary requests support
 - [x] Client, server and bidi streaming
-- [ ] gRPC-Web support
+- [x] gRPC-Web support
 - [ ] Request building helper
 - [ ] Input validation and error handling
 - [ ] Colored output
