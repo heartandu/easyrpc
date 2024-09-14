@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"strings"
 
@@ -112,19 +113,9 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 	rp := format.JSONRequestParser(input, protojson.UnmarshalOptions{})
 	rf := format.JSONResponseFormatter(protojson.MarshalOptions{Multiline: true})
 
-	callCase := usecase.NewCall(
-		a.cmd.OutOrStdout(),
-		descSrc,
-		cc,
-		rp,
-		rf,
-		metadata.New(a.cfg.Request.Metadata),
-	)
+	call := usecase.NewCall(a.cmd.OutOrStdout(), descSrc, cc, rp, rf, metadata.New(a.cfg.Request.Metadata))
 
-	err = callCase.MakeRPCCall(
-		context.Background(),
-		fqn.FullyQualifiedMethodName(args[0], a.cfg.Request.Package, a.cfg.Request.Service),
-	)
+	err = call.MakeRPCCall(ctx, fqn.FullyQualifiedMethodName(args[0], a.cfg.Request.Package, a.cfg.Request.Service))
 	if err != nil {
 		return fmt.Errorf("call rpc failed: %w", err)
 	}
@@ -141,15 +132,18 @@ func (a *App) clientConn() (grpc.ClientConnInterface, error) {
 }
 
 func (a *App) clientGRPCConn() (*grpc.ClientConn, error) {
-	creds, err := a.transportCredentials()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get transport credentials: %w", err)
+	creds := insecure.NewCredentials()
+
+	if a.cfg.Server.TLS {
+		conf, err := a.tlsConfig()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get tls config: %w", err)
+		}
+
+		creds = credentials.NewTLS(conf)
 	}
 
-	clientConn, err := grpc.NewClient(
-		a.cfg.Server.Address,
-		grpc.WithTransportCredentials(creds),
-	)
+	clientConn, err := grpc.NewClient(a.cfg.Server.Address, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
@@ -158,20 +152,18 @@ func (a *App) clientGRPCConn() (*grpc.ClientConn, error) {
 }
 
 func (a *App) clientWebConn() (*conn.WebClient, error) {
-	opts := []grpcweb.DialOption{}
+	credsOpt := grpcweb.WithInsecure()
 
 	if a.cfg.Server.TLS {
-		conf, err := tlsconf.Config(a.cfg.Server.CACert, a.cfg.Server.Cert, a.cfg.Server.CertKey)
+		conf, err := a.tlsConfig()
 		if err != nil {
-			return nil, fmt.Errorf("failed to make tls config: %w", err)
+			return nil, fmt.Errorf("failed to get tls config: %w", err)
 		}
 
-		opts = append(opts, grpcweb.WithTLSConfig(conf))
-	} else {
-		opts = append(opts, grpcweb.WithInsecure())
+		credsOpt = grpcweb.WithTLSConfig(conf)
 	}
 
-	cc, err := grpcweb.DialContext(a.cfg.Server.Address, opts...)
+	cc, err := grpcweb.NewClient(a.cfg.Server.Address, credsOpt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial context: %w", err)
 	}
@@ -179,17 +171,13 @@ func (a *App) clientWebConn() (*conn.WebClient, error) {
 	return conn.NewWebClient(cc), nil
 }
 
-func (a *App) transportCredentials() (credentials.TransportCredentials, error) {
-	if a.cfg.Server.TLS {
-		conf, err := tlsconf.Config(a.cfg.Server.CACert, a.cfg.Server.Cert, a.cfg.Server.CertKey)
-		if err != nil {
-			return nil, fmt.Errorf("failed to make tls config: %w", err)
-		}
-
-		return credentials.NewTLS(conf), nil
+func (a *App) tlsConfig() (*tls.Config, error) {
+	conf, err := tlsconf.Config(a.cfg.Server.CACert, a.cfg.Server.Cert, a.cfg.Server.CertKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make tls config: %w", err)
 	}
 
-	return insecure.NewCredentials(), nil
+	return conf, nil
 }
 
 func (a *App) descriptorSource(ctx context.Context, clientConn grpc.ClientConnInterface) (descriptor.Source, error) {
