@@ -16,6 +16,8 @@ import (
 	"github.com/heartandu/easyrpc/internal/config"
 )
 
+const defaultConfigName = ".easyrpc.yaml"
+
 // App is a container of all application initialization and logic.
 type App struct {
 	cfgFile string
@@ -126,12 +128,11 @@ func (a *App) registerCommands() {
 	a.registerVersionCmd()
 	a.registerCallCmd()
 	a.registerRequestCmd()
+	a.registerConfigCmd()
 }
 
 // readConfig reads in config file and ENV variables if set.
 func (a *App) readConfig() {
-	const defaultConfigName = ".easyrpc.yaml"
-
 	// Find home directory.
 	home, err := os.UserHomeDir()
 	cobra.CheckErr(err)
