@@ -10,7 +10,7 @@ import (
 	"github.com/heartandu/easyrpc/pkg/format"
 )
 
-func TestJSONResponseFormatter_Format(t *testing.T) {
+func TestJSONMessageFormatter_Format(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -46,7 +46,7 @@ func TestJSONResponseFormatter_Format(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			formatter := format.JSONResponseFormatter(tt.out)
+			formatter := format.JSONMessageFormatter(tt.out)
 
 			got, err := formatter.Format(tt.msg)
 			require.NoError(t, err)

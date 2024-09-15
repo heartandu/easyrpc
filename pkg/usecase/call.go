@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"github.com/heartandu/easyrpc/pkg/descriptor"
 	"github.com/heartandu/easyrpc/pkg/format"
@@ -20,8 +19,8 @@ type Call struct {
 	output io.Writer
 	ds     descriptor.Source
 	cc     grpc.ClientConnInterface
-	rp     format.RequestParser
-	rf     format.ResponseFormatter
+	mp     format.MessageParser
+	mf     format.MessageFormatter
 	md     metadata.MD
 }
 
@@ -30,23 +29,23 @@ func NewCall(
 	output io.Writer,
 	descSrc descriptor.Source,
 	clientConn grpc.ClientConnInterface,
-	reqParser format.RequestParser,
-	respFormatter format.ResponseFormatter,
+	msgParser format.MessageParser,
+	msgFormatter format.MessageFormatter,
 	md metadata.MD,
 ) *Call {
 	return &Call{
 		output: output,
 		ds:     descSrc,
 		cc:     clientConn,
-		rp:     reqParser,
-		rf:     respFormatter,
+		mp:     msgParser,
+		mf:     msgFormatter,
 		md:     md,
 	}
 }
 
 // MakeRPCCall makes an RPC call using the provided configuration and method name.
 func (c *Call) MakeRPCCall(ctx context.Context, methodName string) error {
-	m, err := c.findMethod(methodName)
+	m, err := c.ds.FindMethod(methodName)
 	if err != nil {
 		return fmt.Errorf("failed to find method %q: %w", methodName, err)
 	}
@@ -87,10 +86,8 @@ func (c *Call) streamCall(ctx context.Context, m descriptor.Method) error {
 }
 
 func (c *Call) unaryCall(ctx context.Context, m descriptor.Method) error {
-	resp := m.ResponseMessage()
-
-	req, err := m.RequestMessage(c.rp)
-	if err != nil && !errors.Is(err, io.EOF) {
+	req, resp := m.RequestMessage(), m.ResponseMessage()
+	if err := c.mp.Next(req); err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
 
@@ -112,8 +109,8 @@ func (c *Call) unaryCall(ctx context.Context, m descriptor.Method) error {
 
 func (c *Call) streamRequestMessages(stream grpc.ClientStream, m descriptor.Method) error {
 	for {
-		req, err := m.RequestMessage(c.rp)
-		if err != nil {
+		req := m.RequestMessage()
+		if err := c.mp.Next(req); err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
@@ -144,21 +141,8 @@ func (c *Call) streamResponseMessages(stream grpc.ClientStream, m descriptor.Met
 	}
 }
 
-func (c *Call) findMethod(methodName string) (descriptor.Method, error) {
-	fd, err := c.ds.FindSymbol(methodName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find symbol: %w", err)
-	}
-
-	if rpc, ok := fd.(protoreflect.MethodDescriptor); ok {
-		return descriptor.NewMethod(rpc), nil
-	}
-
-	return nil, ErrNotAMethod
-}
-
 func (c *Call) printResponse(resp proto.Message) error {
-	formattedResp, err := c.rf.Format(resp)
+	formattedResp, err := c.mf.Format(resp)
 	if err != nil {
 		return fmt.Errorf("failed to format response: %w", err)
 	}

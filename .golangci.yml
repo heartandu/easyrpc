@@ -11,6 +11,9 @@ linters-settings:
   errcheck:
     check-type-assertions: true
     check-blank: true
+    exclude-functions:
+      - (*github.com/spf13/viper.Viper).BindEnv
+      - (*github.com/spf13/viper.Viper).BindPFlag
   exhaustive:
     default-signifies-exhaustive: true
   gci:
@@ -98,5 +101,8 @@ issues:
         - wrapcheck
     - path: test/
       linters:
+        - cyclop
+        - gocognit
+        - maintidx
         - paralleltest
         - testpackage

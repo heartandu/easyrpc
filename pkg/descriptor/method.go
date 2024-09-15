@@ -9,17 +9,15 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
-
-	"github.com/heartandu/easyrpc/pkg/format"
 )
 
 var ErrInvalidFQN = errors.New("invalid fully qualified method name")
 
 // Method is an interface representing a gRPC method.
 type Method interface {
-	// RequestMessage returns the parsed request message.
-	RequestMessage(rp format.RequestParser) (proto.Message, error)
-	// ResponseMessage returns the response message.
+	// RequestMessage returns the request proto message.
+	RequestMessage() proto.Message
+	// ResponseMessage returns the response proto message.
 	ResponseMessage() proto.Message
 	// StreamDesc returns the stream descriptor.
 	StreamDesc() *grpc.StreamDesc
@@ -42,14 +40,8 @@ func NewMethod(rpc protoreflect.MethodDescriptor) Method {
 }
 
 // RequestMessage parses the request message using the given RequestParser.
-func (m *methodWrapper) RequestMessage(rp format.RequestParser) (proto.Message, error) {
-	msg := dynamicpb.NewMessage(m.rpc.Input())
-
-	if err := rp.Next(msg); err != nil {
-		return nil, fmt.Errorf("failed to parse request: %w", err)
-	}
-
-	return msg, nil
+func (m *methodWrapper) RequestMessage() proto.Message {
+	return dynamicpb.NewMessage(m.rpc.Input())
 }
 
 // ResponseMessage returns a new response message instance.

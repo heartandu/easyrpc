@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"strings"
 
 	"github.com/heartandu/grpc-web-go-client/grpcweb"
 	"github.com/spf13/cobra"
@@ -24,10 +23,10 @@ import (
 
 func (a *App) registerCallCmd() {
 	cmd := &cobra.Command{
-		Use:               "call [method name]",
+		Use:               "call [method]",
 		Aliases:           []string{"c"},
 		Short:             "Call a remote RPC",
-		ValidArgsFunction: a.callAutocomplete,
+		ValidArgsFunction: a.methodAutocomplete,
 		RunE:              a.runCall,
 	}
 
@@ -36,59 +35,8 @@ func (a *App) registerCallCmd() {
 	a.cmd.AddCommand(cmd)
 }
 
-func (a *App) callAutocomplete(
-	_ *cobra.Command,
-	args []string,
-	toComplete string,
-) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
-
-	a.readConfig()
-
-	ctx := context.Background()
-
-	cc, err := a.clientConn()
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-
-	descSrc, err := a.descriptorSource(ctx, cc)
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-
-	methods, err := descSrc.ListMethods()
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-
-	result := make([]string, 0)
-
-	isCaseInsensitive := toComplete == strings.ToLower(toComplete)
-
-	completionToCompare := toComplete
-	if isCaseInsensitive {
-		completionToCompare = strings.ToLower(completionToCompare)
-	}
-
-	for _, method := range methods {
-		methodToCompare := method
-		if isCaseInsensitive {
-			methodToCompare = strings.ToLower(methodToCompare)
-		}
-
-		if strings.Contains(methodToCompare, completionToCompare) {
-			result = append(result, method)
-		}
-	}
-
-	return result, cobra.ShellCompDirectiveNoFileComp
-}
-
 func (a *App) runCall(cmd *cobra.Command, args []string) error {
-	if len(args) != 1 {
+	if len(args) < 1 {
 		return ErrMissingArgs
 	}
 
@@ -102,7 +50,7 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 
 	cc, err := a.clientConn()
 	if err != nil {
-		return fmt.Errorf("failed to create grpc client connection: %w", err)
+		return fmt.Errorf("failed to create client connection: %w", err)
 	}
 
 	descSrc, err := a.descriptorSource(ctx, cc)
@@ -110,10 +58,10 @@ func (a *App) runCall(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create descriptor source: %w", err)
 	}
 
-	rp := format.JSONRequestParser(input, protojson.UnmarshalOptions{})
-	rf := format.JSONResponseFormatter(protojson.MarshalOptions{Multiline: true})
+	mp := format.JSONMessageParser(input, protojson.UnmarshalOptions{})
+	mf := format.JSONMessageFormatter(protojson.MarshalOptions{Multiline: true})
 
-	call := usecase.NewCall(a.cmd.OutOrStdout(), descSrc, cc, rp, rf, metadata.New(a.cfg.Request.Metadata))
+	call := usecase.NewCall(a.cmd.OutOrStdout(), descSrc, cc, mp, mf, metadata.New(a.cfg.Request.Metadata))
 
 	err = call.MakeRPCCall(ctx, fqn.FullyQualifiedMethodName(args[0], a.cfg.Request.Package, a.cfg.Request.Service))
 	if err != nil {

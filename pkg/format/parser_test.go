@@ -14,7 +14,7 @@ import (
 	"github.com/heartandu/easyrpc/pkg/format"
 )
 
-func TestJSONRequestParser_Parse(t *testing.T) {
+func TestJSONMessageParser_Parse(t *testing.T) {
 	t.Parallel()
 
 	testErr := errors.New("oh no")
@@ -50,7 +50,7 @@ func TestJSONRequestParser_Parse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			parser := format.JSONRequestParser(tt.input, protojson.UnmarshalOptions{})
+			parser := format.JSONMessageParser(tt.input, protojson.UnmarshalOptions{})
 
 			got := &testdata.EchoRequest{}
 

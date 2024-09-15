@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO: Add streaming call tests, add more protobuf types to tests.
+// TODO: Add more protobuf types to tests.
 func TestCall(t *testing.T) {
 	fs := afero.NewMemMapFs()
 
