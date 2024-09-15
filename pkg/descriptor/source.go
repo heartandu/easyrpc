@@ -6,17 +6,17 @@ import (
 	"fmt"
 	"io"
 	"iter"
-	"os"
 
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/jhump/protoreflect/grpcreflect"
+	"github.com/spf13/afero"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"github.com/heartandu/easyrpc/pkg/fs"
+	fsutil "github.com/heartandu/easyrpc/pkg/fs"
 )
 
 var (
@@ -42,17 +42,17 @@ func ReflectionSource(ctx context.Context, cc grpc.ClientConnInterface) (Source,
 }
 
 // ProtoFilesSource creates a source of protocol buffer descriptors using proto files.
-func ProtoFilesSource(ctx context.Context, importPaths, protoFiles []string) (Source, error) {
+func ProtoFilesSource(ctx context.Context, fs afero.Fs, importPaths, protoFiles []string) (Source, error) {
 	comp := &protocompile.Compiler{
 		Resolver: protocompile.WithStandardImports(&protocompile.SourceResolver{
 			ImportPaths: importPaths,
 			Accessor: func(path string) (io.ReadCloser, error) {
-				p, err := fs.ExpandHome(path)
+				p, err := fsutil.ExpandHome(path)
 				if err != nil {
 					return nil, fmt.Errorf("failed to expand home: %w", err)
 				}
 
-				return os.Open(p)
+				return fs.Open(p)
 			},
 		}),
 	}

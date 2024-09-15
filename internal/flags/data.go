@@ -1,4 +1,4 @@
-package app
+package flags
 
 import (
 	"bytes"
@@ -10,11 +10,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func registerDataFlag(cmd *cobra.Command) {
+// RegisterDataFlag registers the data flag with the provided command.
+// The flag allows the user to specify request data.
+func RegisterDataFlag(cmd *cobra.Command) {
 	cmd.Flags().StringP("data", "d", "", "request data in json format")
 }
 
-func handleDataFlag(fs afero.Fs, cmd *cobra.Command) (io.ReadCloser, error) {
+// HandleDataFlag returns an io.ReadCloser for the data specified in the flag.
+// If the data flag is "-", the data will be read from stdin.
+// If the data flag starts with "@", it opens the file specified in the flag.
+// Otherwise, it returns the provided data string.
+func HandleDataFlag(cmd *cobra.Command, fs afero.Fs) (io.ReadCloser, error) {
 	data, err := cmd.Flags().GetString("data")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get data flag: %w", err)

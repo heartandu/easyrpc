@@ -1,13 +1,33 @@
-package app
+package autocomplete
 
 import (
 	"context"
 	"strings"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+
+	"github.com/heartandu/easyrpc/internal/client"
+	"github.com/heartandu/easyrpc/internal/config"
+	"github.com/heartandu/easyrpc/internal/proto"
 )
 
-func (a *App) methodAutocomplete(
+// MethodArg represents a method argument autocompletion functionality.
+type MethodArg struct {
+	fs  afero.Fs
+	cfg *config.Config
+}
+
+// NewMethodArg creates a new MethodArg instance.
+func NewMethodArg(fs afero.Fs, cfg *config.Config) *MethodArg {
+	return &MethodArg{
+		fs:  fs,
+		cfg: cfg,
+	}
+}
+
+// Complete provides autocomplete suggestions for methods based on the input toComplete.
+func (a *MethodArg) Complete(
 	_ *cobra.Command,
 	args []string,
 	toComplete string,
@@ -16,16 +36,14 @@ func (a *App) methodAutocomplete(
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	a.readConfig()
-
 	ctx := context.Background()
 
-	cc, err := a.clientConn()
+	cc, err := client.New(a.fs, a.cfg)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	descSrc, err := a.descriptorSource(ctx, cc)
+	descSrc, err := proto.NewDescriptorSource(ctx, a.fs, a.cfg, cc)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}

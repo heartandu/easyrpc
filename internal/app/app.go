@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/heartandu/easyrpc/pkg/config"
+	"github.com/heartandu/easyrpc/internal/config"
 )
 
 // App is a container of all application initialization and logic.
@@ -56,6 +56,7 @@ func (a *App) SetInput(r io.Reader) {
 	a.cmd.SetIn(r)
 }
 
+// SetFs sets a filesystem wrapper.
 func (a *App) SetFs(fs afero.Fs) { //nolint:gocritic,revive // The scope is small enough to afford such shadowing.
 	a.fs = fs
 	a.viper.SetFs(fs)

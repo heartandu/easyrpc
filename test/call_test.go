@@ -14,7 +14,7 @@ import (
 
 // TODO: Add more protobuf types to tests.
 func TestCall(t *testing.T) {
-	fs := afero.NewMemMapFs()
+	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
 
 	requestFileName, err := createTempFile(fs, "msg.json", `{"msg":"file test"}`)
 	if err != nil {
