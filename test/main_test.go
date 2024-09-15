@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/spf13/afero"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -44,7 +45,9 @@ func TestMain(m *testing.M) {
 }
 
 func runTest(m *testing.M) int {
-	cfg, err := tlsconf.Config(cacert, cert, key)
+	fs := afero.NewOsFs()
+
+	cfg, err := tlsconf.Config(fs, cacert, cert, key)
 	if err != nil {
 		log.Printf("failed to get tls config: %v", err)
 		return 1

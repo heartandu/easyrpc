@@ -11,7 +11,7 @@ import (
 )
 
 func TestCallAutocomplete(t *testing.T) {
-	fs := afero.NewMemMapFs()
+	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
 
 	protoConf, err := createTempFile(fs, "proto-autocomp.yaml", `
         import_paths:

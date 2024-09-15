@@ -6,30 +6,34 @@ import (
 	"fmt"
 	"io"
 	"iter"
-	"os"
 
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/jhump/protoreflect/grpcreflect"
+	"github.com/spf13/afero"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"github.com/heartandu/easyrpc/pkg/fs"
+	fsutil "github.com/heartandu/easyrpc/pkg/fs"
 )
 
-// ErrSymbolNotFound is returned when a symbol is not found in the protocol buffer files.
-var ErrSymbolNotFound = errors.New("symbol not found")
-
-// ErrReflectionNotSupported is returned when the server does not support the reflection API.
-var ErrReflectionNotSupported = errors.New("server does not support reflection API")
+var (
+	// ErrSymbolNotFound is returned when a symbol is not found in the protocol buffer files.
+	ErrSymbolNotFound = errors.New("symbol not found")
+	// ErrReflectionNotSupported is returned when the server does not support the reflection API.
+	ErrReflectionNotSupported = errors.New("server does not support reflection API")
+	// ErrNotAMethod is returned when requested symbol is not a valid method.
+	ErrNotAMethod = errors.New("selected element is not a method")
+)
 
 // Source defines the interface for a source of protocol buffer descriptors.
 type Source interface {
 	ListServices() ([]string, error)
 	ListMethods() ([]string, error)
 	FindSymbol(name string) (protoreflect.Descriptor, error)
+	FindMethod(method string) (Method, error)
 }
 
 // ReflectionSource creates a source of protocol buffer descriptors using server reflection.
@@ -38,17 +42,17 @@ func ReflectionSource(ctx context.Context, cc grpc.ClientConnInterface) (Source,
 }
 
 // ProtoFilesSource creates a source of protocol buffer descriptors using proto files.
-func ProtoFilesSource(ctx context.Context, importPaths, protoFiles []string) (Source, error) {
+func ProtoFilesSource(ctx context.Context, fs afero.Fs, importPaths, protoFiles []string) (Source, error) {
 	comp := &protocompile.Compiler{
 		Resolver: protocompile.WithStandardImports(&protocompile.SourceResolver{
 			ImportPaths: importPaths,
 			Accessor: func(path string) (io.ReadCloser, error) {
-				p, err := fs.ExpandHome(path)
+				p, err := fsutil.ExpandHome(path)
 				if err != nil {
 					return nil, fmt.Errorf("failed to expand home: %w", err)
 				}
 
-				return os.Open(p)
+				return fs.Open(p)
 			},
 		}),
 	}
@@ -115,6 +119,20 @@ func (s *protoFilesSource) FindSymbol(name string) (protoreflect.Descriptor, err
 	return nil, ErrSymbolNotFound
 }
 
+// FindMethod searches for a method with the given name in the protobuf sources.
+func (s *protoFilesSource) FindMethod(method string) (Method, error) {
+	fd, err := s.FindSymbol(method)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find symbol: %w", err)
+	}
+
+	if rpc, ok := fd.(protoreflect.MethodDescriptor); ok {
+		return NewMethod(rpc), nil
+	}
+
+	return nil, ErrNotAMethod
+}
+
 type serverReflectionSource struct {
 	c *grpcreflect.Client
 }
@@ -170,6 +188,20 @@ func (s *serverReflectionSource) FindSymbol(name string) (protoreflect.Descripto
 	}
 
 	return nil, ErrSymbolNotFound
+}
+
+// FindMethod searches for a method with the given name in the server reflection source.
+func (s *serverReflectionSource) FindMethod(method string) (Method, error) {
+	fd, err := s.FindSymbol(method)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find symbol: %w", err)
+	}
+
+	if rpc, ok := fd.(protoreflect.MethodDescriptor); ok {
+		return NewMethod(rpc), nil
+	}
+
+	return nil, ErrNotAMethod
 }
 
 func reflectWrapErr(msg string, err error) error {

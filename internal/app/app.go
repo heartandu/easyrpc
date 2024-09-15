@@ -4,14 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
+	"path"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/heartandu/easyrpc/pkg/config"
+	"github.com/heartandu/easyrpc/internal/config"
 )
 
 // App is a container of all application initialization and logic.
@@ -54,7 +56,8 @@ func (a *App) SetInput(r io.Reader) {
 	a.cmd.SetIn(r)
 }
 
-func (a *App) SetFs(fs afero.Fs) {
+// SetFs sets a filesystem wrapper.
+func (a *App) SetFs(fs afero.Fs) { //nolint:gocritic,revive // The scope is small enough to afford such shadowing.
 	a.fs = fs
 	a.viper.SetFs(fs)
 }
@@ -63,6 +66,7 @@ func (a *App) SetFs(fs afero.Fs) {
 func (a *App) Run() error {
 	a.bindPFlags()
 	a.bindPFlagsToConfig()
+	a.bindEnv()
 	a.registerCommands()
 
 	cobra.OnInitialize(a.readConfig)
@@ -99,48 +103,63 @@ func (a *App) bindPFlags() {
 
 // bindPFlagsToConfig binds application global flags to configuration structure.
 func (a *App) bindPFlagsToConfig() {
-	a.viper.BindPFlag("cacert", a.pflags.Lookup("cacert"))            //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("cert", a.pflags.Lookup("cert"))                //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("key", a.pflags.Lookup("key"))                  //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("address", a.pflags.Lookup("address"))          //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("reflection", a.pflags.Lookup("reflection"))    //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("web", a.pflags.Lookup("web"))                  //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("tls", a.pflags.Lookup("tls"))                  //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("import_paths", a.pflags.Lookup("import-path")) //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("proto_files", a.pflags.Lookup("proto-file"))   //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("package", a.pflags.Lookup("package"))          //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("service", a.pflags.Lookup("service"))          //nolint:errcheck // viper flag bind
-	a.viper.BindPFlag("metadata", a.pflags.Lookup("metadata"))        //nolint:errcheck // viper flag bind
+	a.viper.BindPFlag("cacert", a.pflags.Lookup("cacert"))
+	a.viper.BindPFlag("cert", a.pflags.Lookup("cert"))
+	a.viper.BindPFlag("key", a.pflags.Lookup("key"))
+	a.viper.BindPFlag("address", a.pflags.Lookup("address"))
+	a.viper.BindPFlag("reflection", a.pflags.Lookup("reflection"))
+	a.viper.BindPFlag("web", a.pflags.Lookup("web"))
+	a.viper.BindPFlag("tls", a.pflags.Lookup("tls"))
+	a.viper.BindPFlag("import_paths", a.pflags.Lookup("import-path"))
+	a.viper.BindPFlag("proto_files", a.pflags.Lookup("proto-file"))
+	a.viper.BindPFlag("package", a.pflags.Lookup("package"))
+	a.viper.BindPFlag("service", a.pflags.Lookup("service"))
+	a.viper.BindPFlag("metadata", a.pflags.Lookup("metadata"))
+}
+
+func (a *App) bindEnv() {
+	a.viper.BindEnv("editor")
 }
 
 // registerCommands adds all application commands to the root one.
 func (a *App) registerCommands() {
 	a.registerVersionCmd()
 	a.registerCallCmd()
+	a.registerRequestCmd()
 }
 
 // readConfig reads in config file and ENV variables if set.
 func (a *App) readConfig() {
-	if a.cfgFile != "" {
-		// Use config file from the flag.
-		a.viper.SetConfigFile(a.cfgFile)
-	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
+	const defaultConfigName = ".easyrpc.yaml"
 
-		// Search config in home or current working directory with name ".easyrpc" (without extension).
-		a.viper.AddConfigPath(".")
-		a.viper.AddConfigPath(home)
-		a.viper.SetConfigType("yaml")
-		a.viper.SetConfigName(".easyrpc")
-	}
+	// Find home directory.
+	home, err := os.UserHomeDir()
+	cobra.CheckErr(err)
 
+	a.viper.SetEnvPrefix("easyrpc")
 	a.viper.AutomaticEnv() // read in environment variables that match
 
-	var notFoundErr viper.ConfigFileNotFoundError
-	if err := a.viper.ReadInConfig(); err != nil && !errors.As(err, &notFoundErr) {
-		cobra.CheckErr(fmt.Errorf("failed to read config: %w", err))
+	files := []string{
+		path.Join(home, defaultConfigName),
+		path.Join(".", defaultConfigName),
+	}
+
+	// Use config file from the flag.
+	if a.cfgFile != "" {
+		files = append(files, a.cfgFile)
+	}
+
+	var (
+		notFoundErr viper.ConfigFileNotFoundError
+		fsErr       *fs.PathError
+	)
+
+	for _, file := range files {
+		a.viper.SetConfigFile(file)
+
+		if err := a.viper.MergeInConfig(); err != nil && !errors.As(err, &notFoundErr) && !errors.As(err, &fsErr) {
+			cobra.CheckErr(fmt.Errorf("failed to read config: %w", err))
+		}
 	}
 
 	if err := a.viper.Unmarshal(&a.cfg); err != nil {

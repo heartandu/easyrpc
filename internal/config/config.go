@@ -2,35 +2,41 @@ package config
 
 // Config represents a common cross-application configuration.
 type Config struct {
-	Proto   Proto   `mapstructure:",squash"`
-	Server  Server  `mapstructure:",squash"`
-	TLS     TLS     `mapstructure:",squash"`
-	Request Request `mapstructure:",squash"`
+	Proto   proto   `mapstructure:",squash"`
+	Server  server  `mapstructure:",squash"`
+	TLS     tls     `mapstructure:",squash"`
+	Request request `mapstructure:",squash"`
+	Editor  editor  `mapstructure:",squash"`
 }
 
-// Proto represents a set of proto files related configuration.
-type Proto struct {
+// proto represents a set of proto files related configuration.
+type proto struct {
 	ImportPaths []string `mapstructure:"import_paths"`
 	ProtoFiles  []string `mapstructure:"proto_files"`
 }
 
-// Server represents a configuration of a remote server connection.
-type Server struct {
+// server represents a configuration of a remote server connection.
+type server struct {
 	Address    string `mapstructure:"address"`
 	Reflection bool   `mapstructure:"reflection"`
 	Web        bool   `mapstructure:"web"`
 }
 
-type TLS struct {
+type tls struct {
 	Enabled bool   `mapstructure:"tls"`
 	CACert  string `mapstructure:"cacert"`
 	Cert    string `mapstructure:"cert"`
 	Key     string `mapstructure:"key"`
 }
 
-// Request represents a request configuration.
-type Request struct {
+// request represents a request configuration.
+type request struct {
 	Metadata map[string]string `mapstructure:"metadata"`
 	Package  string            `mapstructure:"package"`
 	Service  string            `mapstructure:"service"`
+}
+
+// editor represents a message editor utility configuration.
+type editor struct {
+	Cmd string `mapstructure:"editor"`
 }

@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/afero"
 
-	"github.com/heartandu/easyrpc/pkg/app"
+	"github.com/heartandu/easyrpc/internal/app"
 )
 
 func createTempFile(fs afero.Fs, name, contents string) (string, error) {

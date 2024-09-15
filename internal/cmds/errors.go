@@ -1,4 +1,4 @@
-package app
+package cmds
 
 import "errors"
 

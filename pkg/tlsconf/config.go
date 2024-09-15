@@ -5,7 +5,8 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"os"
+
+	"github.com/spf13/afero"
 )
 
 var (
@@ -18,11 +19,11 @@ var (
 // - cacert: path to the CA certificate file (optional),
 // - cert: path to the client certificate file (optional),
 // - key: path to the client certificate key file (optional).
-func Config(cacert, cert, key string) (*tls.Config, error) {
+func Config(fs afero.Fs, cacert, cert, key string) (*tls.Config, error) {
 	var tlsCfg tls.Config
 
 	if cacert != "" {
-		certBytes, err := os.ReadFile(cacert)
+		certBytes, err := afero.ReadFile(fs, cacert)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read CA certificate: %w", err)
 		}
@@ -37,9 +38,9 @@ func Config(cacert, cert, key string) (*tls.Config, error) {
 
 	if cert != "" && key != "" {
 		// Enable mutual authentication
-		certificate, err := tls.LoadX509KeyPair(cert, key)
+		certificate, err := readX509KeyPair(fs, cert, key)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read the client certificate: %w", err)
+			return nil, fmt.Errorf("failed to read x509 key pair: %w", err)
 		}
 
 		tlsCfg.Certificates = append(tlsCfg.Certificates, certificate)
@@ -48,4 +49,23 @@ func Config(cacert, cert, key string) (*tls.Config, error) {
 	}
 
 	return &tlsCfg, nil
+}
+
+func readX509KeyPair(fs afero.Fs, cert, key string) (tls.Certificate, error) {
+	certPEMBlock, err := afero.ReadFile(fs, cert)
+	if err != nil {
+		return tls.Certificate{}, fmt.Errorf("failed to read certificate: %w", err)
+	}
+
+	keyPEMBlock, err := afero.ReadFile(fs, key)
+	if err != nil {
+		return tls.Certificate{}, fmt.Errorf("failed to read key: %w", err)
+	}
+
+	certificate, err := tls.X509KeyPair(certPEMBlock, keyPEMBlock)
+	if err != nil {
+		return tls.Certificate{}, fmt.Errorf("failed to read the client certificate: %w", err)
+	}
+
+	return certificate, nil
 }

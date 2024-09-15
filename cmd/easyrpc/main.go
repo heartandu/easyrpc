@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/heartandu/easyrpc/pkg/app"
+	"github.com/heartandu/easyrpc/internal/app"
 )
 
 func main() {
