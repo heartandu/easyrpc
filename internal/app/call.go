@@ -10,13 +10,13 @@ import (
 
 func (a *App) registerCallCmd() {
 	callCmd := cmds.NewCall(a.fs, &a.cfg)
-	methodArgComp := autocomplete.NewMethodArg(a.fs, &a.cfg)
+	methodArgComp := autocomplete.NewProtoComp(a.fs, a.viper)
 
 	cmd := &cobra.Command{
 		Use:               "call [method]",
 		Aliases:           []string{"c"},
 		Short:             "Call a remote RPC",
-		ValidArgsFunction: a.loadedConfigCompletion(methodArgComp.Complete),
+		ValidArgsFunction: methodArgComp.CompleteMethod,
 		RunE:              callCmd.Run,
 	}
 

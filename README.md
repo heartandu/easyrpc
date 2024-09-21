@@ -18,4 +18,3 @@ Currently, this repository is in the early stage of development and is not recom
 - [ ] Build and publish to brew
 - [ ] "Smart" autocomplete that takes into account `package` and `service` flags with autocomplete for the flags
       themselves
-- [ ] Colored output

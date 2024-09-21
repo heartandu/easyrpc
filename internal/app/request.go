@@ -10,13 +10,13 @@ import (
 
 func (a *App) registerRequestCmd() {
 	requestCmd := cmds.NewRequest(a.fs, &a.cfg)
-	methodArgComp := autocomplete.NewMethodArg(a.fs, &a.cfg)
+	methodArgComp := autocomplete.NewProtoComp(a.fs, a.viper)
 
 	cmd := &cobra.Command{
 		Use:               "request [method]",
 		Aliases:           []string{"r"},
 		Short:             "Prepare a request for a method",
-		ValidArgsFunction: a.loadedConfigCompletion(methodArgComp.Complete),
+		ValidArgsFunction: methodArgComp.CompleteMethod,
 		RunE:              requestCmd.Run,
 	}
 

@@ -17,7 +17,23 @@ import (
 	"github.com/heartandu/easyrpc/internal/config"
 )
 
-const defaultConfigName = ".easyrpc.yaml"
+const (
+	defaultConfigName = ".easyrpc.yaml"
+
+	flagConfig     = "config"
+	flagAddress    = "address"
+	flagImportPath = "import-path"
+	flagProtoFile  = "proto-file"
+	flagReflection = "reflection"
+	flagWeb        = "web"
+	flagTLS        = "tls"
+	flagCACert     = "cacert"
+	flagCert       = "cert"
+	flagKey        = "key"
+	flagPackage    = "package"
+	flagService    = "service"
+	flagMetadata   = "metadata"
+)
 
 // App is a container of all application initialization and logic.
 type App struct {
@@ -79,49 +95,57 @@ func (a *App) Run() error {
 
 // bindPFlags sets up application global flags.
 func (a *App) bindPFlags() {
-	a.pflags.StringVar(&a.cfgFile, "config", "", "config file (default is $HOME/.easyrpc.yaml or ./.easyrpc.yaml)")
-	a.pflags.StringP("address", "a", "", `remote host address in format "host:port" or "host:port/prefix"`)
+	a.pflags.StringVar(&a.cfgFile, flagConfig, "", "config file (default is $HOME/.easyrpc.yaml or ./.easyrpc.yaml)")
+	a.pflags.StringP(flagAddress, "a", "", `remote host address in format "host:port" or "host:port/prefix"`)
 	a.pflags.StringSliceP(
-		"import-path",
+		flagImportPath,
 		"i",
 		nil,
 		"proto import path, can provide multiple paths by repeating the flag",
 	)
 	a.pflags.StringSliceP(
-		"proto-file",
+		flagProtoFile,
 		"p",
 		nil,
 		"proto files to use, can provide multiple files by repeating the flag",
 	)
 	a.cmd.RegisterFlagCompletionFunc(
-		"proto-file",
-		a.loadedConfigCompletion(autocomplete.NewProtoFileArg(&a.cfg).Complete),
+		flagProtoFile,
+		autocomplete.NewProtoFileFlag(a.viper).Complete,
 	)
-	a.pflags.BoolP("reflection", "r", false, "use server reflection to make requests")
-	a.pflags.BoolP("web", "w", false, "use gRPC-Web client to make requests")
-	a.pflags.Bool("tls", false, "use a secure TLS connection")
-	a.pflags.String("cacert", "", "CA certificate file for verifying the server")
-	a.pflags.String("cert", "", "certificate file for mutual TLS auth. It must be provided along with --key")
-	a.pflags.String("key", "", "private key for mutual TLS auth. It must be provided along with --cert")
-	a.pflags.String("package", "", "the package name to use as default")
-	a.pflags.String("service", "", "the service name to use as default")
-	a.pflags.StringToStringP("metadata", "H", nil, "default headers that are attached to every request")
+	a.pflags.BoolP(flagReflection, "r", false, "use server reflection to make requests")
+	a.pflags.BoolP(flagWeb, "w", false, "use gRPC-Web client to make requests")
+	a.pflags.Bool(flagTLS, false, "use a secure TLS connection")
+	a.pflags.String(flagCACert, "", "CA certificate file for verifying the server")
+	a.pflags.String(flagCert, "", "certificate file for mutual TLS auth. It must be provided along with --key")
+	a.pflags.String(flagKey, "", "private key for mutual TLS auth. It must be provided along with --cert")
+	a.pflags.String(flagPackage, "", "the package name to use as default")
+	a.cmd.RegisterFlagCompletionFunc(
+		flagPackage,
+		autocomplete.NewProtoComp(a.fs, a.viper).CompletePackage,
+	)
+	a.pflags.String(flagService, "", "the service name to use as default")
+	a.cmd.RegisterFlagCompletionFunc(
+		flagService,
+		autocomplete.NewProtoComp(a.fs, a.viper).CompleteService,
+	)
+	a.pflags.StringToStringP(flagMetadata, "H", nil, "default headers that are attached to every request")
 }
 
 // bindPFlagsToConfig binds application global flags to configuration structure.
 func (a *App) bindPFlagsToConfig() {
-	a.viper.BindPFlag("cacert", a.pflags.Lookup("cacert"))
-	a.viper.BindPFlag("cert", a.pflags.Lookup("cert"))
-	a.viper.BindPFlag("key", a.pflags.Lookup("key"))
-	a.viper.BindPFlag("address", a.pflags.Lookup("address"))
-	a.viper.BindPFlag("reflection", a.pflags.Lookup("reflection"))
-	a.viper.BindPFlag("web", a.pflags.Lookup("web"))
-	a.viper.BindPFlag("tls", a.pflags.Lookup("tls"))
-	a.viper.BindPFlag("import_paths", a.pflags.Lookup("import-path"))
-	a.viper.BindPFlag("proto_files", a.pflags.Lookup("proto-file"))
-	a.viper.BindPFlag("package", a.pflags.Lookup("package"))
-	a.viper.BindPFlag("service", a.pflags.Lookup("service"))
-	a.viper.BindPFlag("metadata", a.pflags.Lookup("metadata"))
+	a.viper.BindPFlag("cacert", a.pflags.Lookup(flagCACert))
+	a.viper.BindPFlag("cert", a.pflags.Lookup(flagCert))
+	a.viper.BindPFlag("key", a.pflags.Lookup(flagKey))
+	a.viper.BindPFlag("address", a.pflags.Lookup(flagAddress))
+	a.viper.BindPFlag("reflection", a.pflags.Lookup(flagReflection))
+	a.viper.BindPFlag("web", a.pflags.Lookup(flagWeb))
+	a.viper.BindPFlag("tls", a.pflags.Lookup(flagTLS))
+	a.viper.BindPFlag("import_paths", a.pflags.Lookup(flagImportPath))
+	a.viper.BindPFlag("proto_files", a.pflags.Lookup(flagProtoFile))
+	a.viper.BindPFlag("package", a.pflags.Lookup(flagPackage))
+	a.viper.BindPFlag("service", a.pflags.Lookup(flagService))
+	a.viper.BindPFlag("metadata", a.pflags.Lookup(flagMetadata))
 }
 
 func (a *App) bindEnv() {
