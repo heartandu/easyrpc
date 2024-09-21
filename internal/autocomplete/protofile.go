@@ -35,6 +35,7 @@ func (f *ProtoFileFlag) Complete(_ *cobra.Command, args []string, _ string) ([]s
 		return nil, cobra.ShellCompDirectiveDefault
 	}
 
+	encounteredPaths := map[string]struct{}{}
 	result := make([]string, 0, len(cfg.Proto.ImportPaths))
 
 	for _, path := range cfg.Proto.ImportPaths {
@@ -43,7 +44,11 @@ func (f *ProtoFileFlag) Complete(_ *cobra.Command, args []string, _ string) ([]s
 			return nil, cobra.ShellCompDirectiveError
 		}
 
-		result = append(result, expandedPath)
+		if _, ok := encounteredPaths[expandedPath]; !ok {
+			result = append(result, expandedPath)
+		}
+
+		encounteredPaths[expandedPath] = struct{}{}
 	}
 
 	return result, cobra.ShellCompDirectiveFilterDirs

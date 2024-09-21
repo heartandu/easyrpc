@@ -13,6 +13,8 @@ import (
 	"github.com/heartandu/easyrpc/internal/proto"
 )
 
+const delim = "."
+
 // ProtoComp represents a protobuf symbol autocompletion functionality.
 type ProtoComp struct {
 	fs      afero.Fs
@@ -47,6 +49,10 @@ func (c *ProtoComp) CompleteMethod(
 
 		result := make([]string, 0, methodPartsCount)
 
+		// If package name has been set, and doesn't match
+		// the received one, filter the method out.
+		// If they match, omit the package name from the result.
+		// Otherwise, use it to form a fully qualified name.
 		if cfg.Request.Package != "" {
 			if pkg != cfg.Request.Package {
 				return ""
@@ -55,9 +61,22 @@ func (c *ProtoComp) CompleteMethod(
 			result = append(result, pkg)
 		}
 
+		// If service name has been set, and doesn't match
+		// the received one, filter the method out.
+		// If they match, omit the service name from the result.
+		// Otherwise, use it to form a fully qualified name.
 		if cfg.Request.Service != "" {
-			if svc != cfg.Request.Service {
+			// Service name may as well be a fully qualivied service name,
+			// so we also need to handle this special case.
+			if !servicesMatch(cfg.Request.Service, pkg, svc) {
 				return ""
+			}
+
+			// If we only specified the service name, we need to append it to obtain the correct method name.
+			// Otherwise, we would render "example.Method" from the method name "example.Service.Method",
+			// which would be invalid.
+			if len(result) > 0 {
+				result = append(result, svc)
 			}
 		} else {
 			result = append(result, svc)
@@ -65,7 +84,7 @@ func (c *ProtoComp) CompleteMethod(
 
 		result = append(result, method)
 
-		return strings.Join(result, ".")
+		return strings.Join(result, delim)
 	})
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
@@ -115,11 +134,25 @@ func (c *ProtoComp) CompleteService(
 	}
 
 	services, err := c.symbols(&cfg, toComplete, func(pkg, svc, _ string) string {
-		if cfg.Request.Package != "" && pkg != cfg.Request.Package {
-			return ""
+		const servicePartsCount = 2
+
+		parts := make([]string, 0, servicePartsCount)
+
+		// If package name has been set, and doesn't match
+		// the received one, filter the method out.
+		// If they match, omit the package name from the result.
+		// Otherwise, use it to form a fully qualified name.
+		if cfg.Request.Package != "" {
+			if pkg != cfg.Request.Package {
+				return ""
+			}
+		} else {
+			parts = append(parts, pkg)
 		}
 
-		return svc
+		parts = append(parts, svc)
+
+		return strings.Join(parts, delim)
 	})
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
@@ -182,21 +215,16 @@ func (c *ProtoComp) symbols(
 func filterMapIter(s []string, f func(pkg, svc, method string) string) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		for _, s := range s {
-			const (
-				minParts = 3
-				delim    = "."
-			)
+			const minParts = 3
 
-			if f != nil {
-				parts := strings.Split(s, delim)
-				if len(parts) < minParts {
-					continue
-				}
+			parts := strings.Split(s, delim)
+			if len(parts) < minParts {
+				continue
+			}
 
-				s = f(strings.Join(parts[:len(parts)-2], delim), parts[len(parts)-2], parts[len(parts)-1])
-				if s == "" {
-					continue
-				}
+			s = f(strings.Join(parts[:len(parts)-2], delim), parts[len(parts)-2], parts[len(parts)-1])
+			if s == "" {
+				continue
 			}
 
 			if cont := yield(s); !cont {
@@ -204,4 +232,19 @@ func filterMapIter(s []string, f func(pkg, svc, method string) string) iter.Seq[
 			}
 		}
 	}
+}
+
+func servicesMatch(cfgService, pkg, svc string) bool {
+	svcParts := strings.Split(cfgService, delim)
+	if len(svcParts) > 1 {
+		if pkg != strings.Join(svcParts[:len(svcParts)-1], delim) {
+			return false
+		}
+	}
+
+	if svc != svcParts[len(svcParts)-1] {
+		return false
+	}
+
+	return true
 }

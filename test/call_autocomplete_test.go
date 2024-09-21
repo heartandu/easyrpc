@@ -21,7 +21,7 @@ func TestCallAutocomplete(t *testing.T) {
 		t.Fatalf("failed to create proto files config file: %v", err)
 	}
 
-	reflectConf, err := createTempFile(fs, "reflet-autocomp.yaml", `
+	reflectConf, err := createTempFile(fs, "reflect-autocomp.yaml", `
         address: `+address(insecureSocket)+`
         reflection: true
     `)
@@ -167,6 +167,132 @@ func TestCallAutocomplete(t *testing.T) {
 				"echo.EchoService.Error",
 				"grpc.reflection.v1.ServerReflection.ServerReflectionInfo",
 				"grpc.reflection.v1alpha.ServerReflection.ServerReflectionInfo",
+			},
+		},
+		{
+			name: "empty completion with package flag",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--package",
+				"echo",
+				"",
+			},
+			want: []string{
+				"EchoService.Echo",
+				"EchoService.Error",
+				"EchoService.ClientStream",
+				"EchoService.ServerStream",
+				"EchoService.BidiStream",
+			},
+		},
+		{
+			name: "partial completion with package flag",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--package",
+				"echo",
+				"stream",
+			},
+			want: []string{
+				"EchoService.ClientStream",
+				"EchoService.ServerStream",
+				"EchoService.BidiStream",
+			},
+		},
+		{
+			name: "empty completion with package and service flags",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--package",
+				"echo",
+				"--service",
+				"EchoService",
+				"",
+			},
+			want: []string{
+				"Echo",
+				"Error",
+				"ClientStream",
+				"ServerStream",
+				"BidiStream",
+			},
+		},
+		{
+			name: "partial completion with package and service flags",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--package",
+				"echo",
+				"--service",
+				"EchoService",
+				"stream",
+			},
+			want: []string{
+				"ClientStream",
+				"ServerStream",
+				"BidiStream",
+			},
+		},
+		{
+			name: "partial completion with only service flag",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--service",
+				"EchoService",
+				"stream",
+			},
+			want: []string{
+				"echo.EchoService.ClientStream",
+				"echo.EchoService.ServerStream",
+				"echo.EchoService.BidiStream",
+			},
+		},
+		{
+			name: "partial completion with fully qualified service",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--service",
+				"echo.EchoService",
+				"stream",
+			},
+			want: []string{
+				"echo.EchoService.ClientStream",
+				"echo.EchoService.ServerStream",
+				"echo.EchoService.BidiStream",
+			},
+		},
+		{
+			name: "partial completion with fully qualified service that doesn't exist",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--service",
+				"test.EchoService",
+				"stream",
+			},
+			want: []string{},
+		},
+		{
+			name: "partial completion with fully qualified service and package",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--package",
+				"echo",
+				"--service",
+				"echo.EchoService",
+				"stream",
+			},
+			want: []string{
+				"ClientStream",
+				"ServerStream",
+				"BidiStream",
 			},
 		},
 	}
