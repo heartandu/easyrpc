@@ -1,8 +1,6 @@
 package test
 
 import (
-	"iter"
-	"slices"
 	"strings"
 	"testing"
 
@@ -23,7 +21,7 @@ func TestCallAutocomplete(t *testing.T) {
 		t.Fatalf("failed to create proto files config file: %v", err)
 	}
 
-	reflectConf, err := createTempFile(fs, "reflet-autocomp.yaml", `
+	reflectConf, err := createTempFile(fs, "reflect-autocomp.yaml", `
         address: `+address(insecureSocket)+`
         reflection: true
     `)
@@ -39,7 +37,7 @@ func TestCallAutocomplete(t *testing.T) {
 		{
 			name: "empty flags",
 			args: []string{""},
-			want: nil,
+			want: []string{},
 		},
 		{
 			name: "empty completion",
@@ -171,6 +169,132 @@ func TestCallAutocomplete(t *testing.T) {
 				"grpc.reflection.v1alpha.ServerReflection.ServerReflectionInfo",
 			},
 		},
+		{
+			name: "empty completion with package flag",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--package",
+				"echo",
+				"",
+			},
+			want: []string{
+				"EchoService.Echo",
+				"EchoService.Error",
+				"EchoService.ClientStream",
+				"EchoService.ServerStream",
+				"EchoService.BidiStream",
+			},
+		},
+		{
+			name: "partial completion with package flag",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--package",
+				"echo",
+				"stream",
+			},
+			want: []string{
+				"EchoService.ClientStream",
+				"EchoService.ServerStream",
+				"EchoService.BidiStream",
+			},
+		},
+		{
+			name: "empty completion with package and service flags",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--package",
+				"echo",
+				"--service",
+				"EchoService",
+				"",
+			},
+			want: []string{
+				"Echo",
+				"Error",
+				"ClientStream",
+				"ServerStream",
+				"BidiStream",
+			},
+		},
+		{
+			name: "partial completion with package and service flags",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--package",
+				"echo",
+				"--service",
+				"EchoService",
+				"stream",
+			},
+			want: []string{
+				"ClientStream",
+				"ServerStream",
+				"BidiStream",
+			},
+		},
+		{
+			name: "partial completion with only service flag",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--service",
+				"EchoService",
+				"stream",
+			},
+			want: []string{
+				"echo.EchoService.ClientStream",
+				"echo.EchoService.ServerStream",
+				"echo.EchoService.BidiStream",
+			},
+		},
+		{
+			name: "partial completion with fully qualified service",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--service",
+				"echo.EchoService",
+				"stream",
+			},
+			want: []string{
+				"echo.EchoService.ClientStream",
+				"echo.EchoService.ServerStream",
+				"echo.EchoService.BidiStream",
+			},
+		},
+		{
+			name: "partial completion with fully qualified service that doesn't exist",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--service",
+				"test.EchoService",
+				"stream",
+			},
+			want: []string{},
+		},
+		{
+			name: "partial completion with fully qualified service and package",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--package",
+				"echo",
+				"--service",
+				"echo.EchoService",
+				"stream",
+			},
+			want: []string{
+				"ClientStream",
+				"ServerStream",
+				"BidiStream",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -184,31 +308,11 @@ func TestCallAutocomplete(t *testing.T) {
 				t.Fatalf("autocomplete returned unknown response: %v", lines)
 			}
 
-			require.Equal(t, tt.want, slices.Collect(dedup(lines[:len(lines)-2])))
+			require.Equal(t, tt.want, lines[:len(lines)-2])
 		})
 	}
 }
 
 func runCallAutocomplete(fs afero.Fs, args ...string) ([]byte, error) {
 	return run(fs, nil, append([]string{"__complete", "call"}, args...)...)
-}
-
-func dedup(lines []string) iter.Seq[string] {
-	return func(yield func(string) bool) {
-		if len(lines) == 0 {
-			return
-		}
-
-		m := map[string]struct{}{}
-
-		for _, l := range lines {
-			if _, ok := m[l]; !ok {
-				m[l] = struct{}{}
-
-				if cont := yield(l); !cont {
-					return
-				}
-			}
-		}
-	}
 }

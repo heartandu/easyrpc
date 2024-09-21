@@ -14,8 +14,8 @@ Currently, this repository is in the early stage of development and is not recom
 - [x] Request building helper
 - [x] Populate configuration command
 - [x] Input validation and error handling
+- [x] "Smart" autocomplete that takes into account `package` and `service` flags with autocomplete for the flags
+      themselves
 - [ ] Sensible readme
 - [ ] Build and publish to brew
-- [ ] "Smart" autocomplete that takes into account `package` and `service` flags with autocomplete for the flags
-      themselves
-- [ ] Colored output
+- [ ] Refine and cover with tests `request` and `config` commands
