@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	"github.com/heartandu/easyrpc/internal/autocomplete"
 	"github.com/heartandu/easyrpc/internal/config"
 )
 
@@ -91,6 +92,10 @@ func (a *App) bindPFlags() {
 		"p",
 		nil,
 		"proto files to use, can provide multiple files by repeating the flag",
+	)
+	a.cmd.RegisterFlagCompletionFunc(
+		"proto-file",
+		a.loadedConfigCompletion(autocomplete.NewProtoFileArg(&a.cfg).Complete),
 	)
 	a.pflags.BoolP("reflection", "r", false, "use server reflection to make requests")
 	a.pflags.BoolP("web", "w", false, "use gRPC-Web client to make requests")
