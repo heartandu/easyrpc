@@ -10,7 +10,7 @@ import (
 
 func (a *App) registerRequestCmd() {
 	requestCmd := cmds.NewRequest(a.fs, &a.cfg)
-	methodArgComp := autocomplete.NewProtoComp(a.fs, a.viper)
+	methodArgComp := autocomplete.NewProtoComp(a.fs, a.readConfig)
 
 	cmd := &cobra.Command{
 		Use:               "request [method]",

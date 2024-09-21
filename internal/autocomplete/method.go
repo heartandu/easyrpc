@@ -3,13 +3,10 @@ package autocomplete
 import (
 	"context"
 	"iter"
-	"maps"
-	"slices"
 	"strings"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/heartandu/easyrpc/internal/client"
 	"github.com/heartandu/easyrpc/internal/config"
@@ -18,17 +15,15 @@ import (
 
 // ProtoComp represents a protobuf symbol autocompletion functionality.
 type ProtoComp struct {
-	fs    afero.Fs
-	viper *viper.Viper
-
-	cfg config.Config
+	fs      afero.Fs
+	cfgFunc func() (config.Config, error)
 }
 
 // NewProtoComp creates a new ProtoComp instance.
-func NewProtoComp(fs afero.Fs, v *viper.Viper) *ProtoComp {
+func NewProtoComp(fs afero.Fs, cfgFunc func() (config.Config, error)) *ProtoComp {
 	return &ProtoComp{
-		fs:    fs,
-		viper: v,
+		fs:      fs,
+		cfgFunc: cfgFunc,
 	}
 }
 
@@ -42,25 +37,26 @@ func (c *ProtoComp) CompleteMethod(
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	if err := c.viper.Unmarshal(&c.cfg); err != nil {
+	cfg, err := c.cfgFunc()
+	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	methods, err := c.symbols(toComplete, func(pkg, svc, method string) string {
+	methods, err := c.symbols(&cfg, toComplete, func(pkg, svc, method string) string {
 		const methodPartsCount = 3
 
 		result := make([]string, 0, methodPartsCount)
 
-		if c.cfg.Request.Package != "" {
-			if pkg != c.cfg.Request.Package {
+		if cfg.Request.Package != "" {
+			if pkg != cfg.Request.Package {
 				return ""
 			}
 		} else {
 			result = append(result, pkg)
 		}
 
-		if c.cfg.Request.Service != "" {
-			if svc != c.cfg.Request.Service {
+		if cfg.Request.Service != "" {
+			if svc != cfg.Request.Service {
 				return ""
 			}
 		} else {
@@ -88,11 +84,12 @@ func (c *ProtoComp) CompletePackage(
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	if err := c.viper.Unmarshal(&c.cfg); err != nil {
+	cfg, err := c.cfgFunc()
+	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	packages, err := c.symbols(toComplete, func(pkg, _, _ string) string {
+	packages, err := c.symbols(&cfg, toComplete, func(pkg, _, _ string) string {
 		return pkg
 	})
 	if err != nil {
@@ -112,12 +109,13 @@ func (c *ProtoComp) CompleteService(
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	if err := c.viper.Unmarshal(&c.cfg); err != nil {
+	cfg, err := c.cfgFunc()
+	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	services, err := c.symbols(toComplete, func(pkg, svc, _ string) string {
-		if c.cfg.Request.Package != "" && pkg != c.cfg.Request.Package {
+	services, err := c.symbols(&cfg, toComplete, func(pkg, svc, _ string) string {
+		if cfg.Request.Package != "" && pkg != cfg.Request.Package {
 			return ""
 		}
 
@@ -130,15 +128,19 @@ func (c *ProtoComp) CompleteService(
 	return services, cobra.ShellCompDirectiveNoFileComp
 }
 
-func (c *ProtoComp) symbols(toComplete string, filterMapFunc func(pkg, svc, method string) string) ([]string, error) {
+func (c *ProtoComp) symbols(
+	cfg *config.Config,
+	toComplete string,
+	filterMapFunc func(pkg, svc, method string) string,
+) ([]string, error) {
 	ctx := context.Background()
 
-	cc, err := client.New(c.fs, &c.cfg)
+	cc, err := client.New(c.fs, cfg)
 	if err != nil {
 		return nil, err //nolint:wrapcheck // Error wrapping is unnecessary in authocomplete.
 	}
 
-	descSrc, err := proto.NewDescriptorSource(ctx, c.fs, &c.cfg, cc)
+	descSrc, err := proto.NewDescriptorSource(ctx, c.fs, cfg, cc)
 	if err != nil {
 		return nil, err //nolint:wrapcheck // Error wrapping is unnecessary in authocomplete.
 	}
@@ -148,7 +150,8 @@ func (c *ProtoComp) symbols(toComplete string, filterMapFunc func(pkg, svc, meth
 		return nil, err //nolint:wrapcheck // Error wrapping is unnecessary in authocomplete.
 	}
 
-	result := map[string]struct{}{}
+	encounteredSymbols := map[string]struct{}{}
+	result := make([]string, 0)
 
 	isCaseInsensitive := toComplete == strings.ToLower(toComplete)
 
@@ -165,11 +168,15 @@ func (c *ProtoComp) symbols(toComplete string, filterMapFunc func(pkg, svc, meth
 		}
 
 		if strings.Contains(symbolToCompare, completionToCompare) {
-			result[symbol] = struct{}{}
+			if _, ok := encounteredSymbols[symbol]; !ok {
+				result = append(result, symbol)
+			}
+
+			encounteredSymbols[symbol] = struct{}{}
 		}
 	}
 
-	return slices.Collect(maps.Keys(result)), nil
+	return result, nil
 }
 
 func filterMapIter(s []string, f func(pkg, svc, method string) string) iter.Seq[string] {

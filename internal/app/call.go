@@ -10,7 +10,7 @@ import (
 
 func (a *App) registerCallCmd() {
 	callCmd := cmds.NewCall(a.fs, &a.cfg)
-	methodArgComp := autocomplete.NewProtoComp(a.fs, a.viper)
+	methodArgComp := autocomplete.NewProtoComp(a.fs, a.readConfig)
 
 	cmd := &cobra.Command{
 		Use:               "call [method]",

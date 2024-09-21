@@ -88,13 +88,16 @@ func (a *App) Run() error {
 	a.bindEnv()
 	a.registerCommands()
 
-	cobra.OnInitialize(a.readConfig)
+	cobra.OnInitialize(a.onInit)
 
 	return a.cmd.Execute() //nolint:wrapcheck // It's not informative to wrap the error here.
 }
 
 // bindPFlags sets up application global flags.
 func (a *App) bindPFlags() {
+	protoCompletion := autocomplete.NewProtoComp(a.fs, a.readConfig)
+	protoFileCompletion := autocomplete.NewProtoFileFlag(a.readConfig)
+
 	a.pflags.StringVar(&a.cfgFile, flagConfig, "", "config file (default is $HOME/.easyrpc.yaml or ./.easyrpc.yaml)")
 	a.pflags.StringP(flagAddress, "a", "", `remote host address in format "host:port" or "host:port/prefix"`)
 	a.pflags.StringSliceP(
@@ -109,10 +112,7 @@ func (a *App) bindPFlags() {
 		nil,
 		"proto files to use, can provide multiple files by repeating the flag",
 	)
-	a.cmd.RegisterFlagCompletionFunc(
-		flagProtoFile,
-		autocomplete.NewProtoFileFlag(a.viper).Complete,
-	)
+	a.cmd.RegisterFlagCompletionFunc(flagProtoFile, protoFileCompletion.Complete)
 	a.pflags.BoolP(flagReflection, "r", false, "use server reflection to make requests")
 	a.pflags.BoolP(flagWeb, "w", false, "use gRPC-Web client to make requests")
 	a.pflags.Bool(flagTLS, false, "use a secure TLS connection")
@@ -120,15 +120,9 @@ func (a *App) bindPFlags() {
 	a.pflags.String(flagCert, "", "certificate file for mutual TLS auth. It must be provided along with --key")
 	a.pflags.String(flagKey, "", "private key for mutual TLS auth. It must be provided along with --cert")
 	a.pflags.String(flagPackage, "", "the package name to use as default")
-	a.cmd.RegisterFlagCompletionFunc(
-		flagPackage,
-		autocomplete.NewProtoComp(a.fs, a.viper).CompletePackage,
-	)
+	a.cmd.RegisterFlagCompletionFunc(flagPackage, protoCompletion.CompletePackage)
 	a.pflags.String(flagService, "", "the service name to use as default")
-	a.cmd.RegisterFlagCompletionFunc(
-		flagService,
-		autocomplete.NewProtoComp(a.fs, a.viper).CompleteService,
-	)
+	a.cmd.RegisterFlagCompletionFunc(flagService, protoCompletion.CompleteService)
 	a.pflags.StringToStringP(flagMetadata, "H", nil, "default headers that are attached to every request")
 }
 
@@ -160,11 +154,20 @@ func (a *App) registerCommands() {
 	a.registerConfigCmd()
 }
 
+func (a *App) onInit() {
+	var err error
+
+	a.cfg, err = a.readConfig()
+	cobra.CheckErr(err)
+}
+
 // readConfig reads in config file and ENV variables if set.
-func (a *App) readConfig() {
+func (a *App) readConfig() (config.Config, error) {
 	// Find home directory.
 	home, err := os.UserHomeDir()
-	cobra.CheckErr(err)
+	if err != nil {
+		return config.Config{}, fmt.Errorf("failedt to read user home directory: %w", err)
+	}
 
 	a.viper.SetEnvPrefix("easyrpc")
 	a.viper.AutomaticEnv() // read in environment variables that match
@@ -188,11 +191,15 @@ func (a *App) readConfig() {
 		a.viper.SetConfigFile(file)
 
 		if err := a.viper.MergeInConfig(); err != nil && !errors.As(err, &notFoundErr) && !errors.As(err, &fsErr) {
-			cobra.CheckErr(fmt.Errorf("failed to read config: %w", err))
+			return config.Config{}, fmt.Errorf("failed to read config: %w", err)
 		}
 	}
 
-	if err := a.viper.Unmarshal(&a.cfg); err != nil {
-		cobra.CheckErr(fmt.Errorf("failed to unmarshal config: %w", err))
+	var cfg config.Config
+
+	if err := a.viper.Unmarshal(&cfg); err != nil {
+		return config.Config{}, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
+
+	return cfg, nil
 }

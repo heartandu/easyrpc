@@ -1,8 +1,6 @@
 package test
 
 import (
-	"iter"
-	"slices"
 	"strings"
 	"testing"
 
@@ -39,7 +37,7 @@ func TestCallAutocomplete(t *testing.T) {
 		{
 			name: "empty flags",
 			args: []string{""},
-			want: nil,
+			want: []string{},
 		},
 		{
 			name: "empty completion",
@@ -184,31 +182,11 @@ func TestCallAutocomplete(t *testing.T) {
 				t.Fatalf("autocomplete returned unknown response: %v", lines)
 			}
 
-			require.Equal(t, tt.want, slices.Collect(dedup(lines[:len(lines)-2])))
+			require.Equal(t, tt.want, lines[:len(lines)-2])
 		})
 	}
 }
 
 func runCallAutocomplete(fs afero.Fs, args ...string) ([]byte, error) {
 	return run(fs, nil, append([]string{"__complete", "call"}, args...)...)
-}
-
-func dedup(lines []string) iter.Seq[string] {
-	return func(yield func(string) bool) {
-		if len(lines) == 0 {
-			return
-		}
-
-		m := map[string]struct{}{}
-
-		for _, l := range lines {
-			if _, ok := m[l]; !ok {
-				m[l] = struct{}{}
-
-				if cont := yield(l); !cont {
-					return
-				}
-			}
-		}
-	}
 }

@@ -2,7 +2,6 @@ package autocomplete
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/heartandu/easyrpc/internal/config"
 	"github.com/heartandu/easyrpc/pkg/fs"
@@ -10,13 +9,13 @@ import (
 
 // ProtoFileFlag represents a proto-file flag autocompletion functionality.
 type ProtoFileFlag struct {
-	viper *viper.Viper
+	cfgFunc func() (config.Config, error)
 }
 
 // NewProtoFileFlag returns a new instance of ProtoFileFlag.
-func NewProtoFileFlag(v *viper.Viper) *ProtoFileFlag {
+func NewProtoFileFlag(cfgFunc func() (config.Config, error)) *ProtoFileFlag {
 	return &ProtoFileFlag{
-		viper: v,
+		cfgFunc: cfgFunc,
 	}
 }
 
@@ -27,8 +26,8 @@ func (f *ProtoFileFlag) Complete(_ *cobra.Command, args []string, _ string) ([]s
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	var cfg config.Config
-	if err := f.viper.Unmarshal(&cfg); err != nil {
+	cfg, err := f.cfgFunc()
+	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
