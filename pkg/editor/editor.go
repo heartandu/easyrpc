@@ -66,7 +66,7 @@ func (e *cmdEditor) Run(msg string) (string, error) {
 }
 
 func (e *cmdEditor) writeMsgToFile(msg string) (string, error) {
-	f, err := afero.TempFile(e.fs, afero.GetTempDir(e.fs, ""), "editor-msg-*.txt")
+	f, err := afero.TempFile(e.fs, afero.GetTempDir(e.fs, ""), "editor-msg-*.json")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary file: %w", err)
 	}

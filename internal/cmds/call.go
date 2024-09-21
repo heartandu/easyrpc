@@ -2,6 +2,7 @@ package cmds
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/spf13/afero"
@@ -38,6 +39,10 @@ func (c *Call) Run(cmd *cobra.Command, args []string) error {
 		return ErrMissingArgs
 	}
 
+	if err := c.validateConfig(); err != nil {
+		return errors.Join(ErrValidation, err)
+	}
+
 	input, err := flags.HandleDataFlag(cmd, c.fs)
 	if err != nil {
 		return fmt.Errorf("failed to handle data flag: %w", err)
@@ -67,4 +72,22 @@ func (c *Call) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func (c *Call) validateConfig() error {
+	var err error
+
+	if c.cfg.TLS.Cert == "" && c.cfg.TLS.Key != "" || c.cfg.TLS.Cert != "" && c.cfg.TLS.Key == "" {
+		err = errors.Join(err, ErrMissingCertOrKey)
+	}
+
+	if c.cfg.Server.Address == "" {
+		err = errors.Join(err, ErrEmptyAddress)
+	}
+
+	if len(c.cfg.Proto.ProtoFiles) == 0 && !c.cfg.Server.Reflection {
+		err = errors.Join(err, ErrNoSource)
+	}
+
+	return err
 }

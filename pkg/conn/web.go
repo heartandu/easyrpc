@@ -2,14 +2,11 @@ package conn
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/heartandu/grpc-web-go-client/grpcweb"
 	"google.golang.org/grpc"
 )
-
-var ErrNotAStreamRequest = errors.New("not a stream request")
 
 // WebClient is an adapter for a gRPC-Web client.
 type WebClient struct {
