@@ -2,6 +2,7 @@ package cmds
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/spf13/afero"
@@ -37,6 +38,10 @@ func (r *Request) Run(cmd *cobra.Command, args []string) error {
 		return ErrMissingArgs
 	}
 
+	if err := r.validateConfig(); err != nil {
+		return errors.Join(ErrValidation, err)
+	}
+
 	ctx := context.Background()
 
 	cc, err := client.New(r.fs, r.cfg)
@@ -65,8 +70,28 @@ func (r *Request) Run(cmd *cobra.Command, args []string) error {
 
 	err = request.Prepare(fqn.FullyQualifiedMethodName(args[0], r.cfg.Request.Package, r.cfg.Request.Service))
 	if err != nil {
-		return fmt.Errorf("request print failed: %w", err)
+		return fmt.Errorf("request preparing failed: %w", err)
 	}
 
 	return nil
+}
+
+func (r *Request) validateConfig() error {
+	var err error
+
+	if len(r.cfg.Proto.ProtoFiles) == 0 && !r.cfg.Server.Reflection {
+		err = errors.Join(err, ErrNoSource)
+	}
+
+	if r.cfg.Server.Reflection {
+		if r.cfg.Server.Address == "" {
+			err = errors.Join(err, ErrEmptyAddress)
+		}
+
+		if r.cfg.TLS.Cert == "" && r.cfg.TLS.Key != "" || r.cfg.TLS.Cert != "" && r.cfg.TLS.Key == "" {
+			err = errors.Join(err, ErrMissingCertOrKey)
+		}
+	}
+
+	return err
 }

@@ -68,6 +68,10 @@ linters-settings:
         arguments:
           - fmt.Fprintln
           - fmt.Fprintf
+      - name: package-comments
+        disabled: true
+  stylecheck:
+    checks: ["all", "-ST1000", "-ST1003"]
   tagalign:
     sort: false
   testifylint:
@@ -85,6 +89,15 @@ linters:
     - varnamelen
 
 issues:
+  include:
+    - EXC0002
+    - EXC0011
+    - EXC0012
+    - EXC0013
+    - EXC0014
+    - EXC0015
+  exclude:
+    - exported var Err(.+) should have comment( \(or a comment on this block\))? or be unexported
   exclude-rules:
     - path: _test\.go
       linters:
