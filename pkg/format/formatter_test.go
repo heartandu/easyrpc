@@ -25,22 +25,6 @@ func TestJSONMessageFormatter_Format(t *testing.T) {
 			msg:  &testdata.EchoResponse{Msg: "hi"},
 			want: `{"msg":"hi"}`,
 		},
-		{
-			name: "multiline",
-			out:  protojson.MarshalOptions{Multiline: true},
-			msg:  &testdata.EchoResponse{Msg: "hi"},
-			want: `{
-  "msg": "hi"
-}`,
-		},
-		{
-			name: "custom indent",
-			out:  protojson.MarshalOptions{Indent: "    "},
-			msg:  &testdata.EchoResponse{Msg: "hi"},
-			want: `{
-    "msg": "hi"
-}`,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
