@@ -8,6 +8,8 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+
+	fsutil "github.com/heartandu/easyrpc/pkg/fs"
 )
 
 // RegisterDataFlag registers the data flag with the provided command.
@@ -31,7 +33,12 @@ func HandleDataFlag(cmd *cobra.Command, fs afero.Fs) (io.ReadCloser, error) {
 	}
 
 	if strings.HasPrefix(data, "@") {
-		file, err := fs.Open(data[1:])
+		path, err := fsutil.ExpandHome(data[1:])
+		if err != nil {
+			return nil, fmt.Errorf("failed to expand home dir: %w", err)
+		}
+
+		file, err := fs.Open(path)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open file: %w", err)
 		}
