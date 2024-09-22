@@ -2,6 +2,7 @@ package fs_test
 
 import (
 	"os/user"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -43,7 +44,7 @@ func TestExpandHome(t *testing.T) {
 		{
 			name: "path starting with tilde",
 			path: "~/some/path",
-			want: u.HomeDir + "/some/path",
+			want: filepath.Join(u.HomeDir, "some", "path"),
 		},
 		{
 			name: "single tilde",
