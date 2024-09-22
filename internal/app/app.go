@@ -37,6 +37,8 @@ const (
 
 // App is a container of all application initialization and logic.
 type App struct {
+	version string
+
 	cfgFile string
 	cfg     config.Config
 
@@ -47,7 +49,7 @@ type App struct {
 }
 
 // NewApp returns a new instance of App.
-func NewApp() *App {
+func NewApp(version string) *App {
 	cmd := &cobra.Command{
 		Use:   "easyrpc",
 		Short: "An easy gRPC client",
@@ -57,10 +59,11 @@ The main purpose of this utility is for manual API testing.`,
 	}
 
 	return &App{
-		fs:     afero.NewOsFs(),
-		cmd:    cmd,
-		viper:  viper.New(),
-		pflags: cmd.PersistentFlags(),
+		version: version,
+		fs:      afero.NewOsFs(),
+		cmd:     cmd,
+		viper:   viper.New(),
+		pflags:  cmd.PersistentFlags(),
 	}
 }
 
