@@ -12,7 +12,8 @@ a more convenient tool for users.
 <!-- mtoc-start -->
 
 * [Installation](#installation)
-  * [From source](#from-source)
+  * [Binaries](#binaries)
+  * [Source](#source)
   * [Register autocompletion](#register-autocompletion)
 * [Usage](#usage)
   * [Invoking RPCs](#invoking-rpcs)
@@ -28,7 +29,11 @@ a more convenient tool for users.
 
 ## Installation
 
-### From source
+### Binaries
+
+Download the preferred binary from the [releases](https://github.com/heartandu/easyrpc/releases) page.
+
+### Source
 
 To be able to install from source, you will need to install the [Go SDK](https://go.dev/dl/).
 Go v1.23 or later is required.
