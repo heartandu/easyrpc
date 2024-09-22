@@ -33,7 +33,7 @@ func run(fs afero.Fs, input io.Reader, args ...string) ([]byte, error) {
 
 	buf := bytes.NewBuffer(nil)
 
-	a := app.NewApp()
+	a := app.NewApp("0.0.0-SNAPSHOT")
 	a.SetOutput(buf)
 	a.SetFs(fs)
 
