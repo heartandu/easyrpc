@@ -8,7 +8,23 @@ EasyRPC is influenced by the utilities [`grpcurl`](https://github.com/fullstoryd
 [`evans`](https://github.com/ktr0731/evans), and aims to combine the two different approaches (basic CLI and REPL) into
 a more convenient tool for users.
 
-[TOC]
+
+<!-- mtoc-start -->
+
+* [Installation](#installation)
+  * [From source](#from-source)
+  * [Register autocompletion](#register-autocompletion)
+* [Usage](#usage)
+  * [Invoking RPCs](#invoking-rpcs)
+  * [Streaming RPCs](#streaming-rpcs)
+  * [TLS](#tls)
+  * [Metadata](#metadata)
+  * [Input data](#input-data)
+  * [Autocompletion](#autocompletion)
+  * [Configuration files](#configuration-files)
+  * [gRPC-Web](#grpc-web)
+
+<!-- mtoc-end -->
 
 ## Installation
 
@@ -25,7 +41,7 @@ go install github.com/heartandu/easyrpc/cmd/easyrpc@latest
 Ensure that your `GOBIN` directory (typically located at `$HOME/go/bin`) is added to the `PATH`,
 or verify that the installed binary is accessible in one of the standard `PATH` locations on your system.
 
-### Autocompletion
+### Register autocompletion
 
 To begin using it, you must register the autocompletions script for your preferred shell.
 Currently, the following shells are supported: `bash`, `fish`, `zsh`, and `powershell`.
