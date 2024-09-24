@@ -12,6 +12,7 @@ a more convenient tool for users.
 <!-- mtoc-start -->
 
 * [Installation](#installation)
+  * [Homebrew](#homebrew)
   * [Binaries](#binaries)
   * [Source](#source)
   * [Register autocompletion](#register-autocompletion)
@@ -28,6 +29,15 @@ a more convenient tool for users.
 <!-- mtoc-end -->
 
 ## Installation
+
+### Homebrew
+
+On macOS and Linux, `easyrpc` is available via [Homebrew](https://brew.sh/) Tap:
+
+```shell
+brew tap heartandu/easyrpc
+brew install easyrpc
+```
 
 ### Binaries
 
