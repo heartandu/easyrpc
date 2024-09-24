@@ -58,3 +58,15 @@ nfpms:
       - apk
       - deb
       - rpm
+
+brews:
+  - name: easyrpc
+    commit_author:
+      name: heartandu
+    homepage: https://github.com/heartandu/easyrpc/
+    description: EasyRPC is an easy-to-use gRPC client.
+    license: MIT
+    repository:
+      name: homebrew-easyrpc
+      owner: heartandu
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
