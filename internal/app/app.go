@@ -70,7 +70,7 @@ The main purpose of this utility is for manual API testing.`,
 // SetOutput sets output writer for all commands.
 func (a *App) SetOutput(w io.Writer) {
 	a.cmd.SetOut(w)
-	a.cmd.SetOutput(w)
+	a.cmd.SetErr(w)
 }
 
 // SetInput sets input reader for all commands.

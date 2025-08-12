@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -40,7 +41,7 @@ func NewRequest(
 
 // Prepare formats a request message for the specified method,
 // and optionally allows editing it before writing it to an output.
-func (r *Request) Prepare(method string) error {
+func (r *Request) Prepare(ctx context.Context, method string) error {
 	m, err := r.ds.FindMethod(method)
 	if err != nil {
 		return fmt.Errorf("failed to find method: %w", err)
@@ -52,7 +53,7 @@ func (r *Request) Prepare(method string) error {
 	}
 
 	if r.editor != nil {
-		msg, err = r.editor.Run(msg)
+		msg, err = r.editor.Run(ctx, msg)
 		if err != nil {
 			return fmt.Errorf("failed to edit the message: %w", err)
 		}

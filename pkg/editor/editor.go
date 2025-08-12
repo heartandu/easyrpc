@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -16,7 +17,7 @@ var ErrNoCmd = errors.New("no command to run")
 
 // Editor is an interface that allows message editing in an arbitrary text editor.
 type Editor interface {
-	Run(msg string) (string, error)
+	Run(ctx context.Context, msg string) (string, error)
 }
 
 // NewCmdEditor creates a new instance of cmdEditor which runs an editor specified in cmd.
@@ -33,7 +34,7 @@ type cmdEditor struct {
 }
 
 // Run executes the editor command with the provided message and returns the resulting output.
-func (e *cmdEditor) Run(msg string) (string, error) {
+func (e *cmdEditor) Run(ctx context.Context, msg string) (string, error) {
 	fileName, err := e.writeMsgToFile(msg)
 	defer e.cleanUp(fileName)
 
@@ -48,7 +49,8 @@ func (e *cmdEditor) Run(msg string) (string, error) {
 
 	cmdArgs = append(cmdArgs, fileName)
 
-	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...) //nolint:gosec // This should be fine if ran on a user machine.
+	//nolint:gosec // This should be fine if ran on a user machine.
+	cmd := exec.CommandContext(ctx, cmdArgs[0], cmdArgs[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

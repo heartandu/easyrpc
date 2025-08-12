@@ -53,28 +53,31 @@ func runTest(m *testing.M) int {
 		return 1
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	insecureServer := newServer()
 	defer insecureServer.Stop()
 
 	tlsServer := newServer(grpc.Creds(credentials.NewTLS(cfg)))
 	defer tlsServer.Stop()
 
-	if err := serve(insecureServer, protocol, insecureSocket); err != nil {
+	if err := serve(ctx, insecureServer, protocol, insecureSocket); err != nil {
 		log.Printf("failed to serve insecure server: %v", err)
 		return 1
 	}
 
-	if err := serve(tlsServer, protocol, tlsSocket); err != nil {
+	if err := serve(ctx, tlsServer, protocol, tlsSocket); err != nil {
 		log.Printf("failed to serve tls server: %v", err)
 		return 1
 	}
 
-	if err := serveWeb(grpcweb.WrapServer(insecureServer), protocol, insecureWebSocket, nil); err != nil {
+	if err := serveWeb(ctx, grpcweb.WrapServer(insecureServer), protocol, insecureWebSocket, nil); err != nil {
 		log.Printf("failed to serve insecure web server: %v", err)
 		return 1
 	}
 
-	if err := serveWeb(grpcweb.WrapServer(insecureServer), protocol, tlsWebSocket, cfg); err != nil {
+	if err := serveWeb(ctx, grpcweb.WrapServer(insecureServer), protocol, tlsWebSocket, cfg); err != nil {
 		log.Printf("failed to serve tls web server: %v", err)
 		return 1
 	}
@@ -90,8 +93,8 @@ func newServer(opts ...grpc.ServerOption) *grpc.Server {
 	return s
 }
 
-func serve(s *grpc.Server, protocol, socket string) error {
-	lis, err := net.Listen(protocol, socket)
+func serve(ctx context.Context, s *grpc.Server, protocol, socket string) error {
+	lis, err := (&net.ListenConfig{}).Listen(ctx, protocol, socket)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
@@ -105,7 +108,7 @@ func serve(s *grpc.Server, protocol, socket string) error {
 	return nil
 }
 
-func serveWeb(s *grpcweb.WrappedGrpcServer, protocol, socket string, tlsCfg *tls.Config) error {
+func serveWeb(ctx context.Context, s *grpcweb.WrappedGrpcServer, protocol, socket string, tlsCfg *tls.Config) error {
 	srv := http.Server{
 		Handler: http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 			if s.IsGrpcWebSocketRequest(req) {
@@ -124,7 +127,7 @@ func serveWeb(s *grpcweb.WrappedGrpcServer, protocol, socket string, tlsCfg *tls
 		TLSConfig: tlsCfg,
 	}
 
-	lis, err := net.Listen(protocol, socket)
+	lis, err := (&net.ListenConfig{}).Listen(ctx, protocol, socket)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
