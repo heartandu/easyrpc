@@ -12,6 +12,7 @@ type Config struct {
 // proto represents a set of proto files related configuration.
 type proto struct {
 	ImportPaths []string `mapstructure:"import_paths"`
+	ImportAll   bool     `mapstructure:"import_all"`
 	ProtoFiles  []string `mapstructure:"proto_files"`
 }
 

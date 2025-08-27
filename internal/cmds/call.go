@@ -85,7 +85,7 @@ func (c *Call) validateConfig() error {
 		err = errors.Join(err, ErrEmptyAddress)
 	}
 
-	if len(c.cfg.Proto.ProtoFiles) == 0 && !c.cfg.Server.Reflection {
+	if len(c.cfg.Proto.ProtoFiles) == 0 && !c.cfg.Proto.ImportAll && !c.cfg.Server.Reflection {
 		err = errors.Join(err, ErrNoSource)
 	}
 

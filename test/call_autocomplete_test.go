@@ -21,6 +21,14 @@ func TestCallAutocomplete(t *testing.T) {
 		t.Fatalf("failed to create proto files config file: %v", err)
 	}
 
+	protoImportAllConf, err := createTempFile(fs, "proto-import-all-autocomp.yaml", `
+        import_paths:
+          - `+importPath+`
+        import_all: true`)
+	if err != nil {
+		t.Fatalf("failed to create proto import all files config file: %v", err)
+	}
+
 	reflectConf, err := createTempFile(fs, "reflect-autocomp.yaml", `
         address: `+address(insecureSocket)+`
         reflection: true
@@ -56,6 +64,23 @@ func TestCallAutocomplete(t *testing.T) {
 				"echo.EchoService.BidiStream",
 			},
 		},
+		// TODO: add more tests with more deeply nested proto files and multiple import paths
+		{
+			name: "empty completion import all",
+			args: []string{
+				"-i",
+				importPath,
+				"--import-all",
+				"",
+			},
+			want: []string{
+				"echo.EchoService.Echo",
+				"echo.EchoService.Error",
+				"echo.EchoService.ClientStream",
+				"echo.EchoService.ServerStream",
+				"echo.EchoService.BidiStream",
+			},
+		},
 		{
 			name: "empty completion reflection",
 			args: []string{
@@ -79,6 +104,21 @@ func TestCallAutocomplete(t *testing.T) {
 			args: []string{
 				"--config",
 				protoConf,
+				"",
+			},
+			want: []string{
+				"echo.EchoService.Echo",
+				"echo.EchoService.Error",
+				"echo.EchoService.ClientStream",
+				"echo.EchoService.ServerStream",
+				"echo.EchoService.BidiStream",
+			},
+		},
+		{
+			name: "empty completion config import all",
+			args: []string{
+				"--config",
+				protoImportAllConf,
 				"",
 			},
 			want: []string{
