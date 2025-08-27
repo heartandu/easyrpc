@@ -3,7 +3,7 @@
 ## Build Commands
 - `just build` - Build the binary to `bin/easyrpc`
 - `just test` - Run all tests with race detection and coverage
-- `just test ./pkg/...` - Run tests for specific package
+- `go test -v -race -count=1 test ./pkg/...` - Run tests for specific package
 - `just lint` - Run golangci-lint with comprehensive rules
 
 ## Code Style
