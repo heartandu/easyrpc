@@ -7,3 +7,4 @@ dist/
 *.out
 .DS_Store
 .claude
+cmd/test

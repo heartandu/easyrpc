@@ -88,6 +88,12 @@ $ easyrpc c -a localhost:12345 -i path/to/proto -i other/path/to/proto -p server
 {
   "msg": ""
 }
+
+# Load all proto files from all of the import paths (proto files must have a ".proto" extension)
+$ easyrpc c -a localhost:12345 -i path/to/proto -i other/path/to/proto --import-all example.package.Service.Method
+{
+  "msg": ""
+}
 ```
 
 ### Streaming RPCs

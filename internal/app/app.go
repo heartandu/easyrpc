@@ -23,6 +23,7 @@ const (
 	flagConfig     = "config"
 	flagAddress    = "address"
 	flagImportPath = "import-path"
+	flagImportAll  = "import-all"
 	flagProtoFile  = "proto-file"
 	flagReflection = "reflection"
 	flagWeb        = "web"
@@ -109,6 +110,7 @@ func (a *App) bindPFlags() {
 		nil,
 		"proto import path, can provide multiple paths by repeating the flag",
 	)
+	a.pflags.Bool(flagImportAll, false, "import all proto files from import path")
 	a.pflags.StringSliceP(
 		flagProtoFile,
 		"p",
@@ -139,6 +141,7 @@ func (a *App) bindPFlagsToConfig() {
 	a.viper.BindPFlag("web", a.pflags.Lookup(flagWeb))
 	a.viper.BindPFlag("tls", a.pflags.Lookup(flagTLS))
 	a.viper.BindPFlag("import_paths", a.pflags.Lookup(flagImportPath))
+	a.viper.BindPFlag("import_all", a.pflags.Lookup(flagImportAll))
 	a.viper.BindPFlag("proto_files", a.pflags.Lookup(flagProtoFile))
 	a.viper.BindPFlag("package", a.pflags.Lookup(flagPackage))
 	a.viper.BindPFlag("service", a.pflags.Lookup(flagService))

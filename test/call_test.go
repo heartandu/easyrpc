@@ -31,11 +31,20 @@ func TestCall(t *testing.T) {
 		t.Fatalf("failed to create proto config file: %v", err)
 	}
 
+	protoImportAllConfigFileName, err := createTempFile(fs, "proto_import_all.yaml", `
+        address: `+address(insecureSocket)+`
+        import_paths:
+          - `+importPath+`
+        import_all: true`)
+	if err != nil {
+		t.Fatalf("failed to create proto import all config file: %v", err)
+	}
+
 	reflectionConfigFileName, err := createTempFile(fs, "reflect.yaml", `
         address: `+address(insecureSocket)+`
         reflection: true`)
 	if err != nil {
-		t.Fatalf("failed to create proto config file: %v", err)
+		t.Fatalf("failed to create proto reflection config file: %v", err)
 	}
 
 	tlsConfigFileName, err := createTempFile(fs, "tls.yaml", `
@@ -108,6 +117,21 @@ func TestCall(t *testing.T) {
 			},
 			want: []map[string]any{{"msg": "oops"}},
 		},
+		// TODO: add more tests with more deeply nested proto files and multiple import paths
+		{
+			name: "by proto with import all",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"msg":"good"}`,
+				"-i",
+				importPath,
+				"--import-all",
+			},
+			want: []map[string]any{{"msg": "good"}},
+		},
 		{
 			name: "by reflection",
 			args: []string{
@@ -155,6 +179,17 @@ func TestCall(t *testing.T) {
 				`{"msg":"proto config"}`,
 			},
 			want: []map[string]any{{"msg": "proto config"}},
+		},
+		{
+			name: "by proto import all with config",
+			args: []string{
+				"echo.EchoService.Echo",
+				"--config",
+				protoImportAllConfigFileName,
+				"-d",
+				`{"msg":"proto import all"}`,
+			},
+			want: []map[string]any{{"msg": "proto import all"}},
 		},
 		{
 			name: "by reflection with config",
