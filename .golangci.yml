@@ -1,122 +1,140 @@
-run:
-  timeout: 2m
-
+version: "2"
 output:
   formats:
-    - format: colored-line-number
-
-linters-settings:
-  dupl:
-    threshold: 100
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-    exclude-functions:
-      - (*github.com/spf13/viper.Viper).BindEnv
-      - (*github.com/spf13/viper.Viper).BindPFlag
-      - (*github.com/spf13/cobra.Command).RegisterFlagCompletionFunc
-  exhaustive:
-    default-signifies-exhaustive: true
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/heartandu/easyrpc)
-  gocognit:
-    min-complexity: 20
-  goconst:
-    min-occurrences: 2
-    ignore-tests: true
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - style
-      - performance
-      - experimental
-      - opinionated
-  gocyclo:
-    min-complexity: 20
-  godox:
-    keywords:
-      # - TODO
-      - BUG
-      - FIXME
-  goimports:
-    local-prefixes: github.com/heartandu/easyrpc
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-  nlreturn:
-    block-size: 2
-  revive:
-    ignore-generated-header: true
-    enable-all-rules: true
-    rules:
-      - name: line-length-limit
-        arguments: [120]
-      - name: deep-exit
-        disabled: true
-      - name: add-constant
-        arguments:
-          - maxLitCount: "3"
-            allowStrs: '""'
-            allowInts: "0,1,2"
-            allowFloats: "0.0,0.,1.0,1.,2.0,2."
-      - name: cognitive-complexity
-        arguments: [20]
-      - name: unhandled-error
-        arguments:
-          - fmt.Fprintln
-          - fmt.Fprintf
-      - name: package-comments
-        disabled: true
-  stylecheck:
-    checks: ["all", "-ST1000", "-ST1003"]
-  tagalign:
-    sort: false
-  testifylint:
-    enable-all: true
-
+    text:
+      path: stdout
 linters:
-  enable-all: true
+  default: all
   disable:
     - depguard
-    - execinquery
     - exhaustruct
-    - exportloopref
+    - funcorder
     - ireturn
-    - gomnd
+    - mnd
+    - noinlineerr
     - varnamelen
-
-issues:
-  include:
-    - EXC0002
-    - EXC0011
-    - EXC0012
-    - EXC0013
-    - EXC0014
-    - EXC0015
-  exclude:
-    - exported var Err(.+) should have comment( \(or a comment on this block\))? or be unexported
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - dupl
-        - err113
-        - errcheck
-        - forcetypeassert
-        - funlen
-        - gocyclo
-        - gosec
-        - lll
-        - revive
-        - varnamelen
-        - wrapcheck
-    - path: test/
-      linters:
-        - cyclop
-        - gocognit
-        - maintidx
-        - paralleltest
-        - testpackage
+    - wsl
+  settings:
+    dupl:
+      threshold: 100
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+      exclude-functions:
+        - (*github.com/spf13/viper.Viper).BindEnv
+        - (*github.com/spf13/viper.Viper).BindPFlag
+        - (*github.com/spf13/cobra.Command).RegisterFlagCompletionFunc
+    exhaustive:
+      default-signifies-exhaustive: true
+    gocognit:
+      min-complexity: 20
+    goconst:
+      min-occurrences: 2
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+        - experimental
+        - opinionated
+    gocyclo:
+      min-complexity: 20
+    godox:
+      keywords:
+        - BUG
+        - FIXME
+    govet:
+      disable:
+        - fieldalignment
+      enable-all: true
+    nlreturn:
+      block-size: 2
+    revive:
+      enable-all-rules: true
+      rules:
+        - name: line-length-limit
+          arguments:
+            - 120
+        - name: deep-exit
+          disabled: true
+        - name: add-constant
+          arguments:
+            - allowFloats: 0.0,0.,1.0,1.,2.0,2.
+              allowInts: 0,1,2
+              allowStrs: '""'
+              maxLitCount: "3"
+        - name: cognitive-complexity
+          arguments:
+            - 20
+        - name: unhandled-error
+          arguments:
+            - fmt.Fprintln
+            - fmt.Fprintf
+        - name: package-comments
+          disabled: true
+    staticcheck:
+      checks:
+        - all
+        - -ST1000
+        - -ST1003
+    tagalign:
+      sort: false
+    testifylint:
+      enable-all: true
+  exclusions:
+    generated: lax
+    presets:
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+          - err113
+          - errcheck
+          - forcetypeassert
+          - funlen
+          - gocyclo
+          - gosec
+          - lll
+          - revive
+          - varnamelen
+          - wrapcheck
+        path: _test\.go
+      - linters:
+          - cyclop
+          - gocognit
+          - maintidx
+          - paralleltest
+          - testpackage
+        path: test/
+      - path: (.+)\.go$
+        text: exported var Err(.+) should have comment( \(or a comment on this block\))? or be unexported
+      - linters:
+          - goconst
+        path: (.+)_test\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/heartandu/easyrpc)
+    goimports:
+      local-prefixes:
+        - github.com/heartandu/easyrpc
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

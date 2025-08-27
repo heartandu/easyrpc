@@ -68,7 +68,7 @@ func (r *Request) Run(cmd *cobra.Command, args []string) error {
 	mf := format.JSONMessageFormatter(protojson.MarshalOptions{Multiline: true, EmitUnpopulated: true})
 	request := usecase.NewRequest(out, e, r.fs, ds, mf)
 
-	err = request.Prepare(fqn.FullyQualifiedMethodName(args[0], r.cfg.Request.Package, r.cfg.Request.Service))
+	err = request.Prepare(ctx, fqn.FullyQualifiedMethodName(args[0], r.cfg.Request.Package, r.cfg.Request.Service))
 	if err != nil {
 		return fmt.Errorf("request preparing failed: %w", err)
 	}

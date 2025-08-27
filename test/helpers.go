@@ -27,6 +27,7 @@ func createTempFile(fs afero.Fs, name, contents string) (string, error) {
 
 func run(fs afero.Fs, input io.Reader, args ...string) ([]byte, error) {
 	oldArgs := os.Args
+
 	defer func() { os.Args = oldArgs }()
 
 	os.Args = append([]string{"easyrpc"}, args...)
