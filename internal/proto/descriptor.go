@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -56,7 +57,12 @@ func findProtoFiles(fsys afero.Fs, importPaths []string) ([]string, error) {
 			}
 
 			if !info.IsDir() && strings.HasSuffix(info.Name(), ".proto") {
-				protoFiles = append(protoFiles, strings.TrimPrefix(path, importPath))
+				slashImportPath, slashPath := filepath.ToSlash(importPath), filepath.ToSlash(path)
+				if !strings.HasSuffix(slashImportPath, "/") {
+					slashImportPath += "/"
+				}
+
+				protoFiles = append(protoFiles, filepath.FromSlash(strings.TrimPrefix(slashPath, slashImportPath)))
 			}
 
 			return nil
