@@ -1,4 +1,3 @@
-// TODO: Implement environment variables expanding?
 package fs
 
 import (
@@ -10,6 +9,7 @@ import (
 
 // ExpandHome expands a path that starts with a tilde (~) to the user's home directory.
 // If the path does not start with a tilde, it returns the original path.
+// TODO: Implement environment variables expanding?
 func ExpandHome(path string) (string, error) {
 	if !strings.HasPrefix(path, "~") {
 		return path, nil
