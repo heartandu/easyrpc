@@ -79,7 +79,7 @@ func (r *Request) Run(cmd *cobra.Command, args []string) error {
 func (r *Request) validateConfig() error {
 	var err error
 
-	if len(r.cfg.Proto.ProtoFiles) == 0 && !r.cfg.Server.Reflection {
+	if len(r.cfg.Proto.ProtoFiles) == 0 && !r.cfg.Proto.ImportAll && !r.cfg.Server.Reflection {
 		err = errors.Join(err, ErrNoSource)
 	}
 
