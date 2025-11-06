@@ -46,7 +46,7 @@ Download the preferred binary from the [releases](https://github.com/heartandu/e
 ### Source
 
 To be able to install from source, you will need to install the [Go SDK](https://go.dev/dl/).
-Go v1.23 or later is required.
+Go v1.24.6 or later is required.
 After installation, run the following:
 
 ```shell
