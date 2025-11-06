@@ -61,7 +61,7 @@ func (c *Call) Run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create descriptor source: %w", err)
 	}
 
-	mp := format.JSONMessageParser(input, protojson.UnmarshalOptions{})
+	mp := format.JSONMessageParser(input, protojson.UnmarshalOptions{DiscardUnknown: true})
 	mf := format.JSONMessageFormatter(protojson.MarshalOptions{Multiline: true, EmitUnpopulated: true})
 
 	call := usecase.NewCall(cmd.OutOrStdout(), descSrc, cc, mp, mf, metadata.New(c.cfg.Request.Metadata))
@@ -74,6 +74,7 @@ func (c *Call) Run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// TODO: some of the validation here and in the request command should be described at the same place.
 func (c *Call) validateConfig() error {
 	var err error
 

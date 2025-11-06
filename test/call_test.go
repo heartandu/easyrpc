@@ -17,9 +17,14 @@ func TestCall(t *testing.T) {
 	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
 
 	requestFileName, err := createTempFile(fs, "msg.json", `{"msg":"file test"}`)
-	if err != nil {
-		t.Fatalf("failed to create input file: %v", err)
-	}
+	require.NoError(t, err, "failed to create input file")
+
+	reqWithUnknownFileName, err := createTempFile(
+		fs,
+		"dirty_msg.json",
+		`{"$schema":"https://example.com/some/schema.json","msg":"file with unknown"}`,
+	)
+	require.NoError(t, err, "failed to create input file with unknown fields")
 
 	protoConfigFileName, err := createTempFile(fs, "proto.yaml", `
         address: `+address(insecureSocket)+`
@@ -27,25 +32,19 @@ func TestCall(t *testing.T) {
           - `+importPath+`
         proto_files:
           - `+protoFile)
-	if err != nil {
-		t.Fatalf("failed to create proto config file: %v", err)
-	}
+	require.NoError(t, err, "failed to create proto config file")
 
 	protoImportAllConfigFileName, err := createTempFile(fs, "proto_import_all.yaml", `
         address: `+address(insecureSocket)+`
         import_paths:
           - `+importPath+`
         import_all: true`)
-	if err != nil {
-		t.Fatalf("failed to create proto import all config file: %v", err)
-	}
+	require.NoError(t, err, "failed to create proto import all config file")
 
 	reflectionConfigFileName, err := createTempFile(fs, "reflect.yaml", `
         address: `+address(insecureSocket)+`
         reflection: true`)
-	if err != nil {
-		t.Fatalf("failed to create proto reflection config file: %v", err)
-	}
+	require.NoError(t, err, "failed to create proto reflection config file")
 
 	tlsConfigFileName, err := createTempFile(fs, "tls.yaml", `
         address: `+address(tlsSocket)+`
@@ -54,35 +53,27 @@ func TestCall(t *testing.T) {
         cacert: `+cacert+`
         cert: `+cert+`
         key: `+key)
-	if err != nil {
-		t.Fatalf("failed to create tls config file: %v", err)
-	}
+	require.NoError(t, err, "failed to create tls config file")
 
 	packageAndServiceConfigFileName, err := createTempFile(fs, "pns.yaml", `
         address: `+address(insecureSocket)+`
         reflection: true
         package: echo
         service: EchoService`)
-	if err != nil {
-		t.Fatalf("failed to create proto config file: %v", err)
-	}
+	require.NoError(t, err, "failed to create proto config file")
 
 	mdConfigFileName, err := createTempFile(fs, "md.yaml", `
         address: `+address(insecureSocket)+`
         reflection: true
         metadata:
           test: config`)
-	if err != nil {
-		t.Fatalf("failed to create metadata config file: %v", err)
-	}
+	require.NoError(t, err, "failed to create metadata config file")
 
 	webConfigFileName, err := createTempFile(fs, "web.yaml", `
         address: `+address(insecureWebSocket)+`
         reflection: true
         web: true`)
-	if err != nil {
-		t.Fatalf("failed to create metadata config file: %v", err)
-	}
+	require.NoError(t, err, "failed to create metadata config file")
 
 	webTLSConfigFileName, err := createTempFile(fs, "webTLS.yaml", `
         address: `+address(tlsWebSocket)+`
@@ -92,9 +83,7 @@ func TestCall(t *testing.T) {
         reflection: true
         tls: true
         web: true`)
-	if err != nil {
-		t.Fatalf("failed to create metadata config file: %v", err)
-	}
+	require.NoError(t, err, "failed to create metadata config file")
 
 	tests := []struct {
 		name string
@@ -144,6 +133,19 @@ func TestCall(t *testing.T) {
 			},
 			want: []map[string]any{{"msg": "hello"}},
 		},
+
+		{
+			name: "data from flag with unknown field",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"$schema":"https://example.com/some/schema.json","msg":"with unknown"}`,
+				"-r",
+			},
+			want: []map[string]any{{"msg": "with unknown"}},
+		},
 		{
 			name: "data from file",
 			args: []string{
@@ -155,6 +157,18 @@ func TestCall(t *testing.T) {
 				"-r",
 			},
 			want: []map[string]any{{"msg": "file test"}},
+		},
+		{
+			name: "data from file with unknown field",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				"@" + reqWithUnknownFileName,
+				"-r",
+			},
+			want: []map[string]any{{"msg": "file with unknown"}},
 		},
 		{
 			name: "data from stdin",
@@ -169,6 +183,20 @@ func TestCall(t *testing.T) {
 			in:   strings.NewReader(`{"msg":"stdin test"}`),
 			want: []map[string]any{{"msg": "stdin test"}},
 		},
+		{
+			name: "data from stdin with unknown field",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				"-",
+				"-r",
+			},
+			in:   strings.NewReader(`{"$schema":"https://example.com/some/schema.json","msg":"stdin with unknown"}`),
+			want: []map[string]any{{"msg": "stdin with unknown"}},
+		},
+
 		{
 			name: "by proto with config",
 			args: []string{
@@ -202,6 +230,7 @@ func TestCall(t *testing.T) {
 			},
 			want: []map[string]any{{"msg": "reflection config"}},
 		},
+
 		{
 			name: "tls with only root certificate",
 			args: []string{
@@ -247,6 +276,7 @@ func TestCall(t *testing.T) {
 			},
 			want: []map[string]any{{"msg": "tls certs config"}},
 		},
+
 		{
 			name: "package flag specified",
 			args: []string{
@@ -438,9 +468,7 @@ func TestCall(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b, err := runCall(fs, tt.in, tt.args...)
-			if err != nil {
-				t.Fatalf("command failed: output = %v, err = %v", string(b), err)
-			}
+			require.NoErrorf(t, err, "command failed with output: %s", string(b))
 
 			got := []map[string]any{}
 			d := json.NewDecoder(bytes.NewReader(b))
