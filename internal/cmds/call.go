@@ -39,7 +39,8 @@ func (c *Call) Run(cmd *cobra.Command, args []string) error {
 		return ErrMissingArgs
 	}
 
-	if err := c.validateConfig(); err != nil {
+	validator := config.NewValidator(config.WithValidateConn(true))
+	if err := validator.Validate(c.cfg); err != nil {
 		return errors.Join(ErrValidation, err)
 	}
 
@@ -72,23 +73,4 @@ func (c *Call) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-// TODO: some of the validation here and in the request command should be described at the same place.
-func (c *Call) validateConfig() error {
-	var err error
-
-	if c.cfg.TLS.Cert == "" && c.cfg.TLS.Key != "" || c.cfg.TLS.Cert != "" && c.cfg.TLS.Key == "" {
-		err = errors.Join(err, ErrMissingCertOrKey)
-	}
-
-	if c.cfg.Server.Address == "" {
-		err = errors.Join(err, ErrEmptyAddress)
-	}
-
-	if len(c.cfg.Proto.ProtoFiles) == 0 && !c.cfg.Proto.ImportAll && !c.cfg.Server.Reflection {
-		err = errors.Join(err, ErrNoSource)
-	}
-
-	return err
 }

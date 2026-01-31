@@ -12,6 +12,7 @@ linters:
     - ireturn
     - mnd
     - noinlineerr
+    - nonamedreturns
     - varnamelen
     - wsl
   settings:
