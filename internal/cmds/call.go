@@ -1,9 +1,11 @@
 package cmds
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -50,6 +52,11 @@ func (c *Call) Run(cmd *cobra.Command, args []string) error {
 	}
 	defer input.Close()
 
+	e, err := flags.HandleEditFlag(cmd, c.fs, c.cfg)
+	if err != nil {
+		return fmt.Errorf("failed to handle edit flag: %w", err)
+	}
+
 	ctx := context.Background()
 
 	cc, err := client.New(c.fs, c.cfg)
@@ -62,12 +69,22 @@ func (c *Call) Run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create descriptor source: %w", err)
 	}
 
+	methodName := fqn.FullyQualifiedMethodName(args[0], c.cfg.Request.Package, c.cfg.Request.Service)
 	mp := format.JSONMessageParser(input, protojson.UnmarshalOptions{DiscardUnknown: true})
 	mf := format.JSONMessageFormatter(protojson.MarshalOptions{Multiline: true, EmitUnpopulated: true})
 
+	if e != nil {
+		buf := bytes.NewBuffer(nil)
+		if err = usecase.NewRequest(buf, e, c.fs, descSrc, mp, mf).Prepare(ctx, methodName); err != nil {
+			return fmt.Errorf("failed to prepare request: %w", err)
+		}
+
+		mp = format.JSONMessageParser(io.NopCloser(buf), protojson.UnmarshalOptions{DiscardUnknown: true})
+	}
+
 	call := usecase.NewCall(cmd.OutOrStdout(), descSrc, cc, mp, mf, metadata.New(c.cfg.Request.Metadata))
 
-	err = call.MakeRPCCall(ctx, fqn.FullyQualifiedMethodName(args[0], c.cfg.Request.Package, c.cfg.Request.Service))
+	err = call.MakeRPCCall(ctx, methodName)
 	if err != nil {
 		return fmt.Errorf("call rpc failed: %w", err)
 	}

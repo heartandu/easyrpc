@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -24,6 +26,7 @@ type Request struct {
 	editor editor.Editor
 	fs     afero.Fs
 	ds     descriptor.Source
+	mp     format.MessageParser
 	mf     format.MessageFormatter
 }
 
@@ -33,6 +36,7 @@ func NewRequest(
 	e editor.Editor,
 	fs afero.Fs,
 	ds descriptor.Source,
+	mp format.MessageParser,
 	mf format.MessageFormatter,
 ) *Request {
 	return &Request{
@@ -40,6 +44,7 @@ func NewRequest(
 		editor: e,
 		fs:     fs,
 		ds:     ds,
+		mp:     mp,
 		mf:     mf,
 	}
 }
@@ -55,6 +60,11 @@ func (r *Request) Prepare(ctx context.Context, method string) error {
 	}
 
 	msg := m.RequestMessage()
+	// TODO: handle streamed messages as well
+	if err = r.mp.Next(msg); err != nil && !errors.Is(err, io.EOF) {
+		return fmt.Errorf("failed to parse a message: %w", err)
+	}
+
 	if err = r.acceptMessage(ctx, msg); err != nil {
 		return fmt.Errorf("failed to accept message: %w", err)
 	}
@@ -86,16 +96,33 @@ func (r *Request) acceptMessage(ctx context.Context, msg proto.Message) error {
 		}
 	}()
 
-	messageToAccept := fmt.Sprintf("{\n  \"$schema\": %q\n}", "file://"+schemaFileName)
+	// TODO: This is horribly inefficient
+	formatted, err := format.JSONMessageFormatter(protojson.MarshalOptions{}).Format(msg)
+	if err != nil {
+		return fmt.Errorf("failed to preformat message: %w", err)
+	}
 
-	accepted, err := r.editor.Run(ctx, messageToAccept)
+	msgMap := map[string]any{}
+	if err = json.Unmarshal([]byte(formatted), &msgMap); err != nil {
+		return fmt.Errorf("failed to unmarshal preformatted message: %w", err)
+	}
+
+	msgMap["$schema"] = "file://" + schemaFileName
+
+	messageToAccept, err := json.MarshalIndent(msgMap, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshame message to accept: %w", err)
+	}
+	//
+
+	accepted, err := r.editor.Run(ctx, string(messageToAccept))
 	if err != nil {
 		return fmt.Errorf("failed to edit the message: %w", err)
 	}
 	defer accepted.Close()
 
 	mp := format.JSONMessageParser(accepted, protojson.UnmarshalOptions{DiscardUnknown: true})
-	if err := mp.Next(msg); err != nil {
+	if err := mp.Next(msg); err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("failed to parse accepted message: %w", err)
 	}
 

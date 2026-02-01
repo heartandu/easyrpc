@@ -21,6 +21,7 @@ func (a *App) registerCallCmd() {
 	}
 
 	flags.RegisterDataFlag(cmd)
+	flags.RegisterEditFlag(cmd)
 
 	a.cmd.AddCommand(cmd)
 }
