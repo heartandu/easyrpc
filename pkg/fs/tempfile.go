@@ -3,6 +3,7 @@ package fs
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/afero"
 )
@@ -10,7 +11,7 @@ import (
 // CreateTempFile makes a temporary directory named after the command name,
 // and puts a new temporary file in that directory for reading and writing.
 func CreateTempFile(fs afero.Fs, pattern string) (afero.File, error) {
-	dirname := os.Args[0]
+	dirname := filepath.Base(os.Args[0])
 	tempDir := afero.GetTempDir(fs, dirname)
 
 	f, err := afero.TempFile(fs, tempDir, pattern)

@@ -12,25 +12,67 @@ import (
 	"github.com/heartandu/easyrpc/pkg/fs"
 )
 
+//nolint:tparallel // test sets global os.Args[0] which can't be done in parallel
 func TestCreateTempFile_SuccessfulCreation(t *testing.T) {
 	t.Parallel()
 
 	memFs := afero.NewMemMapFs()
 
-	f, err := fs.CreateTempFile(memFs, "test-*.txt")
-	require.NoError(t, err)
-	require.NotNil(t, f)
+	tests := []struct {
+		name       string
+		binaryName string
+	}{
+		{
+			name: "default full path",
+		},
+		{
+			name: "custom full path",
+			binaryName: func() string {
+				p, err := filepath.Abs("easyrpc")
+				require.NoError(t, err)
 
-	t.Cleanup(func() { f.Close() })
+				return p
+			}(),
+		},
+		{
+			name:       "short name",
+			binaryName: "easyrpc",
+		},
+		{
+			name:       "local path",
+			binaryName: filepath.Join("bin", "easyrpc"),
+		},
+	}
 
-	name := f.Name()
-	require.Contains(t, filepath.Base(name), "test-")
-	require.Contains(t, filepath.Base(name), ".txt")
-	require.Contains(t, name, os.Args[0])
+	//nolint:paralleltest // test sets global os.Args[0] which can't be done in parallel
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.binaryName != "" {
+				oldBinaryName := os.Args[0]
+				os.Args[0] = tt.binaryName
 
-	exists, err := afero.Exists(memFs, name)
-	require.NoError(t, err)
-	require.True(t, exists)
+				t.Cleanup(func() { os.Args[0] = oldBinaryName })
+			}
+
+			f, err := fs.CreateTempFile(memFs, "test-*.txt")
+			require.NoError(t, err)
+			require.NotNil(t, f)
+
+			t.Cleanup(func() { f.Close() })
+
+			name := f.Name()
+			require.Contains(t, filepath.Base(name), "test-")
+			require.Contains(t, filepath.Base(name), ".txt")
+
+			tempdir := afero.GetTempDir(memFs, "")
+			tempdir = filepath.Join(tempdir, filepath.Base(os.Args[0]))
+			require.Equal(t, tempdir, filepath.Dir(name))
+
+			exists, err := afero.Exists(memFs, name)
+			require.NoError(t, err)
+			require.True(t, exists)
+		})
+	}
 }
 
 func TestCreateTempFile_UniqueNames(t *testing.T) {
