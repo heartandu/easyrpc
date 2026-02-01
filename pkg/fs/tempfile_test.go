@@ -1,0 +1,151 @@
+package fs_test
+
+import (
+	"io"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/require"
+
+	"github.com/heartandu/easyrpc/pkg/fs"
+)
+
+func TestCreateTempFile_SuccessfulCreation(t *testing.T) {
+	t.Parallel()
+
+	memFs := afero.NewMemMapFs()
+
+	f, err := fs.CreateTempFile(memFs, "test-*.txt")
+	require.NoError(t, err)
+	require.NotNil(t, f)
+
+	t.Cleanup(func() { f.Close() })
+
+	name := f.Name()
+	require.Contains(t, filepath.Base(name), "test-")
+	require.Contains(t, filepath.Base(name), ".txt")
+	require.Contains(t, name, os.Args[0])
+
+	exists, err := afero.Exists(memFs, name)
+	require.NoError(t, err)
+	require.True(t, exists)
+}
+
+func TestCreateTempFile_UniqueNames(t *testing.T) {
+	t.Parallel()
+
+	memFs := afero.NewMemMapFs()
+
+	files := make(map[string]afero.File)
+
+	for range 3 {
+		f, err := fs.CreateTempFile(memFs, "prefix-*.log")
+		require.NoError(t, err)
+		require.NotNil(t, f)
+
+		t.Cleanup(func() { f.Close() })
+
+		files[f.Name()] = f
+	}
+
+	require.Len(t, files, 3, "all files should have unique names")
+
+	for _, f := range files {
+		exists, err := afero.Exists(memFs, f.Name())
+		require.NoError(t, err)
+		require.True(t, exists)
+	}
+}
+
+func TestCreateTempFile_VariousPatterns(t *testing.T) {
+	t.Parallel()
+
+	memFs := afero.NewMemMapFs()
+
+	tests := []struct {
+		name    string
+		pattern string
+		prefix  string
+		suffix  string
+	}{
+		{
+			name: "empty pattern",
+		},
+		{
+			name:    "suffix only",
+			pattern: "*.tmp",
+			suffix:  ".tmp",
+		},
+		{
+			name:    "prefix only",
+			pattern: "prefix-*",
+			prefix:  "prefix-",
+		},
+		{
+			name:    "suffix with extension",
+			pattern: "*-suffix.log",
+			suffix:  "-suffix.log",
+		},
+		{
+			name:    "prefix and suffix",
+			pattern: "prefix-*-suffix.txt",
+			prefix:  "prefix-",
+			suffix:  "-suffix.txt",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f, err := fs.CreateTempFile(memFs, tt.pattern)
+			require.NoError(t, err)
+			require.NotNil(t, f)
+
+			t.Cleanup(func() { f.Close() })
+
+			basename := filepath.Base(f.Name())
+			if tt.prefix != "" {
+				require.Contains(t, basename, tt.prefix)
+			}
+
+			if tt.suffix != "" {
+				require.Contains(t, basename, tt.suffix)
+			}
+
+			exists, err := afero.Exists(memFs, f.Name())
+			require.NoError(t, err)
+			require.True(t, exists)
+		})
+	}
+}
+
+func TestCreateTempFile_FileOperations(t *testing.T) {
+	t.Parallel()
+
+	memFs := afero.NewMemMapFs()
+
+	f, err := fs.CreateTempFile(memFs, "data-*.txt")
+	require.NoError(t, err)
+	require.NotNil(t, f)
+
+	t.Cleanup(func() { f.Close() })
+
+	testData := []byte("test content for temp file")
+	n, err := f.Write(testData)
+	require.NoError(t, err)
+	require.Equal(t, len(testData), n)
+
+	_, err = f.Seek(0, 0)
+	require.NoError(t, err)
+
+	readData, err := io.ReadAll(f)
+	require.NoError(t, err)
+	require.Equal(t, testData, readData)
+
+	info, err := f.Stat()
+	require.NoError(t, err)
+	require.Equal(t, int64(len(testData)), info.Size())
+}

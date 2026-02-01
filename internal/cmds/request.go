@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/heartandu/easyrpc/internal/client"
 	"github.com/heartandu/easyrpc/internal/config"
@@ -65,8 +66,7 @@ func (r *Request) Run(cmd *cobra.Command, args []string) error {
 	}
 	defer out.Close()
 
-	// mf := format.JSONMessageFormatter(protojson.MarshalOptions{Multiline: true, EmitUnpopulated: true})
-	mf := format.JSONSchemaMessageFormatter(r.fs)
+	mf := format.JSONMessageFormatter(protojson.MarshalOptions{Multiline: true, EmitUnpopulated: true})
 	request := usecase.NewRequest(out, e, r.fs, ds, mf)
 
 	err = request.Prepare(ctx, fqn.FullyQualifiedMethodName(args[0], r.cfg.Request.Package, r.cfg.Request.Service))
