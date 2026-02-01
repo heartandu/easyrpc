@@ -12,10 +12,8 @@ import (
 	"github.com/heartandu/easyrpc/pkg/fs"
 )
 
-//nolint:tparallel // test sets global os.Args[0] which can't be done in parallel
+//nolint:paralleltest // test sets global os.Args[0] which can't be done in parallel
 func TestCreateTempFile_SuccessfulCreation(t *testing.T) {
-	t.Parallel()
-
 	memFs := afero.NewMemMapFs()
 
 	tests := []struct {
@@ -75,9 +73,8 @@ func TestCreateTempFile_SuccessfulCreation(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // test uses global os.Args[0] which is being set in other tests
 func TestCreateTempFile_UniqueNames(t *testing.T) {
-	t.Parallel()
-
 	memFs := afero.NewMemMapFs()
 
 	files := make(map[string]afero.File)
@@ -101,9 +98,8 @@ func TestCreateTempFile_UniqueNames(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // test uses global os.Args[0] which is being set in other tests
 func TestCreateTempFile_VariousPatterns(t *testing.T) {
-	t.Parallel()
-
 	memFs := afero.NewMemMapFs()
 
 	tests := []struct {
@@ -140,8 +136,6 @@ func TestCreateTempFile_VariousPatterns(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
 			f, err := fs.CreateTempFile(memFs, tt.pattern)
 			require.NoError(t, err)
 			require.NotNil(t, f)
@@ -164,9 +158,8 @@ func TestCreateTempFile_VariousPatterns(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // test uses global os.Args[0] which is being set in other tests
 func TestCreateTempFile_FileOperations(t *testing.T) {
-	t.Parallel()
-
 	memFs := afero.NewMemMapFs()
 
 	f, err := fs.CreateTempFile(memFs, "data-*.txt")
