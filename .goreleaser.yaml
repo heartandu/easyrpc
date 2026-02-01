@@ -25,7 +25,8 @@ builds:
       - -s -w -X main.version={{.Version}}
 
 archives:
-  - format: tar.gz
+  - formats:
+      - tar.gz
     # this name template makes the OS and Arch compatible with the results of `uname`.
     name_template: >-
       {{ .Binary }}_
@@ -38,7 +39,8 @@ archives:
     # use zip for windows archives
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
 
 changelog:
   sort: asc
@@ -59,12 +61,14 @@ nfpms:
       - deb
       - rpm
 
-brews:
+homebrew_casks:
   - name: easyrpc
     commit_author:
       name: heartandu
     homepage: https://github.com/heartandu/easyrpc/
-    description: EasyRPC is an easy-to-use gRPC client.
+    description: |
+      EasyRPC is an easy-to-use gRPC client.
+      Inspired by grpcurl and evans and aims to ease the process of querying protobuf RPCs from a terminal.
     license: MIT
     repository:
       name: homebrew-easyrpc
