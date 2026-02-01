@@ -32,11 +32,10 @@ a more convenient tool for users.
 
 ### Homebrew
 
-On macOS and Linux, `easyrpc` is available via [Homebrew](https://brew.sh/) Tap:
+On macOS and Linux, `easyrpc` is available via [Homebrew](https://brew.sh/) Cask:
 
 ```shell
-brew tap heartandu/easyrpc
-brew install easyrpc
+brew install --cask heartandu/easyrpc/easyrpc
 ```
 
 ### Binaries
