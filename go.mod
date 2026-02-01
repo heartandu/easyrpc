@@ -5,15 +5,16 @@ go 1.24.6
 require (
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/heartandu/grpc-web-go-client v0.0.0-20240914113410-f3d11955c59b
+	github.com/heartandu/protoreflect-jsonschema v0.0.1
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/jhump/protoreflect v1.17.0
 	github.com/spf13/afero v1.14.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.7
 	github.com/spf13/viper v1.20.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.74.2
-	google.golang.org/protobuf v1.36.7
+	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
 )
 

@@ -38,7 +38,8 @@ func (r *Request) Run(cmd *cobra.Command, args []string) error {
 		return ErrMissingArgs
 	}
 
-	if err := r.validateConfig(); err != nil {
+	validator := config.NewValidator(config.WithValidateConn(r.cfg.Server.Reflection))
+	if err := validator.Validate(r.cfg); err != nil {
 		return errors.Join(ErrValidation, err)
 	}
 
@@ -74,24 +75,4 @@ func (r *Request) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-func (r *Request) validateConfig() error {
-	var err error
-
-	if len(r.cfg.Proto.ProtoFiles) == 0 && !r.cfg.Proto.ImportAll && !r.cfg.Server.Reflection {
-		err = errors.Join(err, ErrNoSource)
-	}
-
-	if r.cfg.Server.Reflection {
-		if r.cfg.Server.Address == "" {
-			err = errors.Join(err, ErrEmptyAddress)
-		}
-
-		if r.cfg.TLS.Cert == "" && r.cfg.TLS.Key != "" || r.cfg.TLS.Cert != "" && r.cfg.TLS.Key == "" {
-			err = errors.Join(err, ErrMissingCertOrKey)
-		}
-	}
-
-	return err
 }
