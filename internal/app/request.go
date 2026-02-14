@@ -22,6 +22,7 @@ func (a *App) registerRequestCmd() {
 
 	flags.RegisterEditFlag(cmd)
 	flags.RegisterOutputFlag(cmd)
+	flags.RegisterDataFlag(cmd)
 
 	a.cmd.AddCommand(cmd)
 }

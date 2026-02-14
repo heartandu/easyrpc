@@ -55,6 +55,11 @@ func (r *Request) Run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create descriptor source: %w", err)
 	}
 
+	input, err := flags.HandleDataFlag(cmd, r.fs)
+	if err != nil {
+		return fmt.Errorf("failed to handle data flag: %w", err)
+	}
+
 	e, err := flags.HandleEditFlag(cmd, r.fs, r.cfg)
 	if err != nil {
 		return fmt.Errorf("failed to handle edit flag: %w", err)
@@ -66,8 +71,9 @@ func (r *Request) Run(cmd *cobra.Command, args []string) error {
 	}
 	defer out.Close()
 
+	mp := format.JSONMessageParser(input, protojson.UnmarshalOptions{DiscardUnknown: true})
 	mf := format.JSONMessageFormatter(protojson.MarshalOptions{Multiline: true, EmitUnpopulated: true})
-	request := usecase.NewRequest(out, e, r.fs, ds, mf)
+	request := usecase.NewRequest(out, e, r.fs, ds, mp, mf)
 
 	err = request.Prepare(ctx, fqn.FullyQualifiedMethodName(args[0], r.cfg.Request.Package, r.cfg.Request.Service))
 	if err != nil {

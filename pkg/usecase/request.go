@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -24,6 +26,7 @@ type Request struct {
 	editor editor.Editor
 	fs     afero.Fs
 	ds     descriptor.Source
+	mp     format.MessageParser
 	mf     format.MessageFormatter
 }
 
@@ -33,6 +36,7 @@ func NewRequest(
 	e editor.Editor,
 	fs afero.Fs,
 	ds descriptor.Source,
+	mp format.MessageParser,
 	mf format.MessageFormatter,
 ) *Request {
 	return &Request{
@@ -40,6 +44,7 @@ func NewRequest(
 		editor: e,
 		fs:     fs,
 		ds:     ds,
+		mp:     mp,
 		mf:     mf,
 	}
 }
@@ -55,38 +60,80 @@ func (r *Request) Prepare(ctx context.Context, method string) error {
 	}
 
 	msg := m.RequestMessage()
-	if err = r.acceptMessage(ctx, msg); err != nil {
-		return fmt.Errorf("failed to accept message: %w", err)
-	}
 
-	formatted, err := r.mf.Format(msg)
+	schemaFileName, cleanup, err := r.writeTempSchema(msg)
 	if err != nil {
-		return fmt.Errorf("failed to format message: %w", err)
+		return fmt.Errorf("failed to write temporary jsonschema file: %w", err)
 	}
+	defer cleanup()
 
-	fmt.Fprintf(r.out, "%s\n", strings.TrimSpace(formatted))
+	readMsgsCount := 0
+
+readLoop:
+	for {
+		err = r.mp.Next(msg)
+		switch {
+		case errors.Is(err, io.EOF):
+			// Process a message at least once
+			if readMsgsCount > 0 {
+				break readLoop
+			}
+		case err != nil:
+			return fmt.Errorf("failed to parse a message: %w", err)
+		default:
+		}
+
+		if err = r.acceptMessage(ctx, msg, schemaFileName); err != nil {
+			return fmt.Errorf("failed to accept message: %w", err)
+		}
+
+		formatted, err := r.mf.Format(msg)
+		if err != nil {
+			return fmt.Errorf("failed to format message: %w", err)
+		}
+
+		fmt.Fprintf(r.out, "%s\n", strings.TrimSpace(formatted))
+
+		readMsgsCount++
+	}
 
 	return nil
 }
 
-func (r *Request) acceptMessage(ctx context.Context, msg proto.Message) error {
+func (r *Request) writeTempSchema(msg proto.Message) (filename string, cleanup func(), err error) {
+	if r.editor == nil {
+		return "", func() {}, nil
+	}
+
+	file, err := fsutils.CreateTempFile(r.fs, "*.schema.json")
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to create temp schema file: %w", err)
+	}
+	defer file.Close()
+
+	if err = protoschema.NewEncoder(file).Encode(msg.ProtoReflect()); err != nil {
+		return "", nil, fmt.Errorf("failed to encode jsonschema: %w", err)
+	}
+
+	filename = file.Name()
+
+	return filename, func() {
+		if err := r.fs.Remove(filename); err != nil {
+			// TODO: pass a logger instance instead of calling the global one.
+			log.Printf("couldn't remove temporary file: %v", err)
+		}
+	}, nil
+}
+
+func (r *Request) acceptMessage(ctx context.Context, msg proto.Message, schema string) error {
 	if r.editor == nil {
 		return nil
 	}
 
-	schemaFileName, err := r.writeTempSchema(msg)
+	messageToAccept, err := r.injectSchemaAndMarshal(msg, schema)
 	if err != nil {
-		return fmt.Errorf("failed to write temporary jsonschema: %w", err)
+		return fmt.Errorf("failed to marshame message to accept: %w", err)
 	}
-
-	defer func() {
-		if err = r.fs.Remove(schemaFileName); err != nil {
-			// TODO: pass a logger instance instead of calling the global one.
-			log.Printf("couldn't remove temporary file: %v", err)
-		}
-	}()
-
-	messageToAccept := fmt.Sprintf("{\n  \"$schema\": %q\n}", "file://"+schemaFileName)
 
 	accepted, err := r.editor.Run(ctx, messageToAccept)
 	if err != nil {
@@ -95,23 +142,31 @@ func (r *Request) acceptMessage(ctx context.Context, msg proto.Message) error {
 	defer accepted.Close()
 
 	mp := format.JSONMessageParser(accepted, protojson.UnmarshalOptions{DiscardUnknown: true})
-	if err := mp.Next(msg); err != nil {
+	if err := mp.Next(msg); err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("failed to parse accepted message: %w", err)
 	}
 
 	return nil
 }
 
-func (r *Request) writeTempSchema(msg proto.Message) (string, error) {
-	file, err := fsutils.CreateTempFile(r.fs, "*.schema.json")
+// NOTE: This is horribly inefficient, but I have no idea how to inject $schema to a message in one pass.
+func (*Request) injectSchemaAndMarshal(msg proto.Message, schema string) (string, error) {
+	messageBytes, err := protojson.Marshal(msg)
 	if err != nil {
-		return "", fmt.Errorf("failed to create temp schema file: %w", err)
-	}
-	defer file.Close()
-
-	if err := protoschema.NewEncoder(file).Encode(msg.ProtoReflect()); err != nil {
-		return "", fmt.Errorf("failed to encode jsonschema: %w", err)
+		return "", fmt.Errorf("failed to preformat message: %w", err)
 	}
 
-	return file.Name(), nil
+	msgMap := map[string]any{}
+	if err = json.Unmarshal(messageBytes, &msgMap); err != nil {
+		return "", fmt.Errorf("failed to unmarshal preformatted message: %w", err)
+	}
+
+	msgMap["$schema"] = "file://" + schema
+
+	resultingMessage, err := json.MarshalIndent(msgMap, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshame message to accept: %w", err)
+	}
+
+	return string(resultingMessage), nil
 }
