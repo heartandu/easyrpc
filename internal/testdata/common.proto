@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "./testdata";
+
+// Nested messages shared across services
+message NestedInner {
+  string value = 1;
+  int32 count = 2;
+}
+
+message NestedMiddle {
+  string name = 1;
+  NestedInner inner = 2;
+}
+
+message NestedOuter {
+  string id = 1;
+  NestedMiddle middle = 2;
+  repeated NestedInner items = 3;
+}
+
+// Recursive messages shared across services
+message RecursiveNode {
+  string value = 1;
+  RecursiveNode child = 2;
+  repeated RecursiveNode children = 3;
+}

@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO: Add more protobuf types to tests.
 func TestCall(t *testing.T) {
 	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
 
@@ -106,7 +105,6 @@ func TestCall(t *testing.T) {
 			},
 			want: []map[string]any{{"msg": "oops"}},
 		},
-		// TODO: add more tests with more deeply nested proto files and multiple import paths
 		{
 			name: "by proto with import all",
 			args: []string{
@@ -493,4 +491,516 @@ func TestCall(t *testing.T) {
 
 func runCall(fs afero.Fs, in io.Reader, args ...string) ([]byte, error) {
 	return run(fs, in, append([]string{"call"}, args...)...)
+}
+
+func TestCall_Types(t *testing.T) {
+	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
+
+	tests := []struct {
+		name string
+		args []string
+		want map[string]any
+	}{
+		{
+			name: "scalar types with edge values",
+			args: []string{
+				"types.TypesService.ScalarTypes",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{` +
+					`"doubleField":1.7976931348623157e+308,` +
+					`"floatField":3.4028235e+38,` +
+					`"int32Field":2147483647,` +
+					`"int64Field":9223372036854775807,` +
+					`"uint32Field":4294967295,` +
+					`"uint64Field":18446744073709551615,` +
+					`"sint32Field":2147483647,` +
+					`"sint64Field":9223372036854775807,` +
+					`"fixed32Field":4294967295,` +
+					`"fixed64Field":18446744073709551615,` +
+					`"sfixed32Field":2147483647,` +
+					`"sfixed64Field":9223372036854775807,` +
+					`"boolField":true,` +
+					`"stringField":"test string",` +
+					`"bytesField":"YmFzZTY0IGVuY29kZWQ="` +
+					`}`,
+				"-r",
+			},
+			want: map[string]any{
+				"doubleField":   1.7976931348623157e+308,
+				"floatField":    3.4028235e+38,
+				"int32Field":    2147483647.0,
+				"int64Field":    "9223372036854775807",
+				"uint32Field":   4294967295.0,
+				"uint64Field":   "18446744073709551615",
+				"sint32Field":   2147483647.0,
+				"sint64Field":   "9223372036854775807",
+				"fixed32Field":  4294967295.0,
+				"fixed64Field":  "18446744073709551615",
+				"sfixed32Field": 2147483647.0,
+				"sfixed64Field": "9223372036854775807",
+				"boolField":     true,
+				"stringField":   "test string",
+				"bytesField":    "YmFzZTY0IGVuY29kZWQ=",
+			},
+		},
+		{
+			name: "scalar types with zero values",
+			args: []string{
+				"types.TypesService.ScalarTypes",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{` +
+					`"doubleField":0,` +
+					`"floatField":0,` +
+					`"int32Field":0,` +
+					`"int64Field":0,` +
+					`"uint32Field":0,` +
+					`"uint64Field":0,` +
+					`"sint32Field":0,` +
+					`"sint64Field":0,` +
+					`"fixed32Field":0,` +
+					`"fixed64Field":0,` +
+					`"sfixed32Field":0,` +
+					`"sfixed64Field":0,` +
+					`"boolField":false,` +
+					`"stringField":"",` +
+					`"bytesField":""` +
+					`}`,
+				"-r",
+			},
+			want: map[string]any{
+				"doubleField":   0.0,
+				"floatField":    0.0,
+				"int32Field":    0.0,
+				"int64Field":    "0",
+				"uint32Field":   0.0,
+				"uint64Field":   "0",
+				"sint32Field":   0.0,
+				"sint64Field":   "0",
+				"fixed32Field":  0.0,
+				"fixed64Field":  "0",
+				"sfixed32Field": 0.0,
+				"sfixed64Field": "0",
+				"boolField":     false,
+				"stringField":   "",
+				"bytesField":    "",
+			},
+		},
+		{
+			name: "scalar types with negative values",
+			args: []string{
+				"types.TypesService.ScalarTypes",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{` +
+					`"doubleField":-1.7976931348623157e+308,` +
+					`"floatField":-3.4028235e+38,` +
+					`"int32Field":-2147483648,` +
+					`"int64Field":-9223372036854775808,` +
+					`"sint32Field":-2147483648,` +
+					`"sint64Field":-9223372036854775808,` +
+					`"sfixed32Field":-2147483648,` +
+					`"sfixed64Field":-9223372036854775808` +
+					`}`,
+				"-r",
+			},
+			want: map[string]any{
+				"doubleField":   -1.7976931348623157e+308,
+				"floatField":    -3.4028235e+38,
+				"int32Field":    -2147483648.0,
+				"int64Field":    "-9223372036854775808",
+				"uint32Field":   0.0,
+				"uint64Field":   "0",
+				"sint32Field":   -2147483648.0,
+				"sint64Field":   "-9223372036854775808",
+				"fixed32Field":  0.0,
+				"fixed64Field":  "0",
+				"sfixed32Field": -2147483648.0,
+				"sfixed64Field": "-9223372036854775808",
+				"boolField":     false,
+				"stringField":   "",
+				"bytesField":    "",
+			},
+		},
+		{
+			name: "scalar types with special float values",
+			args: []string{
+				"types.TypesService.ScalarTypes",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"doubleField":"NaN","floatField":"Infinity"}`,
+				"-r",
+			},
+			want: map[string]any{
+				"doubleField":   "NaN",
+				"floatField":    "Infinity",
+				"int32Field":    0.0,
+				"int64Field":    "0",
+				"uint32Field":   0.0,
+				"uint64Field":   "0",
+				"sint32Field":   0.0,
+				"sint64Field":   "0",
+				"fixed32Field":  0.0,
+				"fixed64Field":  "0",
+				"sfixed32Field": 0.0,
+				"sfixed64Field": "0",
+				"boolField":     false,
+				"stringField":   "",
+				"bytesField":    "",
+			},
+		},
+		{
+			name: "enum types",
+			args: []string{
+				"types.TypesService.EnumTypes",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"status":"PENDING","priority":"HIGH"}`,
+				"-r",
+			},
+			want: map[string]any{"status": "PENDING", "priority": "HIGH"},
+		},
+		{
+			name: "enum types with numeric values",
+			args: []string{
+				"types.TypesService.EnumTypes",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"status":2,"priority":3}`,
+				"-r",
+			},
+			want: map[string]any{"status": "RUNNING", "priority": "CRITICAL"},
+		},
+		{
+			name: "enum types with default values",
+			args: []string{
+				"types.TypesService.EnumTypes",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{}`,
+				"-r",
+			},
+			want: map[string]any{"status": "UNKNOWN", "priority": "LOW"},
+		},
+		{
+			name: "maps with primitive types",
+			args: []string{
+				"types.TypesService.Maps",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{` +
+					`"stringToInt":{"key1":100,"key2":200},` +
+					`"intToString":{"123":"value1","456":"value2"},` +
+					`"stringToMessage":{"msg1":{"value":"test","count":5}},` +
+					`"boolToFloat":{"true":3.14,"false":2.71}` +
+					`}`,
+				"-r",
+			},
+			want: map[string]any{
+				"stringToInt": map[string]any{"key1": 100.0, "key2": 200.0},
+				"intToString": map[string]any{"123": "value1", "456": "value2"},
+				"stringToMessage": map[string]any{
+					"msg1": map[string]any{"value": "test", "count": 5.0},
+				},
+				"boolToFloat": map[string]any{"true": 3.14, "false": 2.71},
+			},
+		},
+		{
+			name: "maps empty",
+			args: []string{
+				"types.TypesService.Maps",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{}`,
+				"-r",
+			},
+			want: map[string]any{
+				"stringToInt":     map[string]any{},
+				"intToString":     map[string]any{},
+				"stringToMessage": map[string]any{},
+				"boolToFloat":     map[string]any{},
+			},
+		},
+		{
+			name: "oneof with string",
+			args: []string{
+				"types.TypesService.Oneof",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"text":"hello world"}`,
+				"-r",
+			},
+			want: map[string]any{"text": "hello world"},
+		},
+		{
+			name: "oneof with number",
+			args: []string{
+				"types.TypesService.Oneof",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"number":42}`,
+				"-r",
+			},
+			want: map[string]any{"number": 42.0},
+		},
+		{
+			name: "oneof with bool",
+			args: []string{
+				"types.TypesService.Oneof",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"flag":true}`,
+				"-r",
+			},
+			want: map[string]any{"flag": true},
+		},
+		{
+			name: "oneof with nested message",
+			args: []string{
+				"types.TypesService.Oneof",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"nested":{"value":"nested value","count":99}}`,
+				"-r",
+			},
+			want: map[string]any{
+				"nested": map[string]any{"value": "nested value", "count": 99.0},
+			},
+		},
+		{
+			name: "nested messages",
+			args: []string{
+				"types.TypesService.Nested",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{` +
+					`"outer":{` +
+					`"id":"outer-id",` +
+					`"middle":{"name":"middle-name","inner":{"value":"inner-value","count":123}},` +
+					`"items":[{"value":"item1","count":1},{"value":"item2","count":2}]` +
+					`}` +
+					`}`,
+				"-r",
+			},
+			want: map[string]any{
+				"outer": map[string]any{
+					"id": "outer-id",
+					"middle": map[string]any{
+						"name":  "middle-name",
+						"inner": map[string]any{"value": "inner-value", "count": 123.0},
+					},
+					"items": []any{
+						map[string]any{"value": "item1", "count": 1.0},
+						map[string]any{"value": "item2", "count": 2.0},
+					},
+				},
+			},
+		},
+		{
+			name: "recursive messages with 2 levels",
+			args: []string{
+				"types.TypesService.Recursive",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"node":{"value":"level0","child":{"value":"level1","child":{"value":"level2"},"children":[{"value":"child1"},{"value":"child2"}]}}}`,
+				"-r",
+			},
+			want: map[string]any{
+				"node": map[string]any{
+					"value": "level0",
+					"child": map[string]any{
+						"value": "level1",
+						"child": map[string]any{
+							"value":    "level2",
+							"child":    nil,
+							"children": []any{},
+						},
+						"children": []any{
+							map[string]any{"value": "child1", "child": nil, "children": []any{}},
+							map[string]any{"value": "child2", "child": nil, "children": []any{}},
+						},
+					},
+					"children": []any{},
+				},
+			},
+		},
+		{
+			name: "optional fields all set",
+			args: []string{
+				"types.TypesService.Optional",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{` +
+					`"optionalString":"test",` +
+					`"optionalInt32":42,` +
+					`"optionalBool":true,` +
+					`"optionalNested":{"value":"nested","count":5},` +
+					`"optionalEnum":"COMPLETED"` +
+					`}`,
+				"-r",
+			},
+			want: map[string]any{
+				"optionalString": "test",
+				"optionalInt32":  42.0,
+				"optionalBool":   true,
+				"optionalNested": map[string]any{"value": "nested", "count": 5.0},
+				"optionalEnum":   "COMPLETED",
+			},
+		},
+		{
+			name: "optional fields none set",
+			args: []string{
+				"types.TypesService.Optional",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{}`,
+				"-r",
+			},
+			want: map[string]any{},
+		},
+		{
+			name: "optional fields partially set",
+			args: []string{
+				"types.TypesService.Optional",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"optionalString":"only string","optionalInt32":100}`,
+				"-r",
+			},
+			want: map[string]any{
+				"optionalString": "only string",
+				"optionalInt32":  100.0,
+			},
+		},
+		{
+			name: "repeated fields with values",
+			args: []string{
+				"types.TypesService.Repeated",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{` +
+					`"strings":["a","b","c"],` +
+					`"integers":[1,2,3],` +
+					`"doubles":[1.1,2.2,3.3],` +
+					`"bools":[true,false,true],` +
+					`"statuses":["PENDING","RUNNING","COMPLETED"],` +
+					`"nestedItems":[{"value":"item1","count":10},{"value":"item2","count":20}],` +
+					`"bytesList":["aGVsbG8=","d29ybGQ="]` +
+					`}`,
+				"-r",
+			},
+			want: map[string]any{
+				"strings":  []any{"a", "b", "c"},
+				"integers": []any{"1", "2", "3"},
+				"doubles":  []any{1.1, 2.2, 3.3},
+				"bools":    []any{true, false, true},
+				"statuses": []any{"PENDING", "RUNNING", "COMPLETED"},
+				"nestedItems": []any{
+					map[string]any{"value": "item1", "count": 10.0},
+					map[string]any{"value": "item2", "count": 20.0},
+				},
+				"bytesList": []any{"aGVsbG8=", "d29ybGQ="},
+			},
+		},
+		{
+			name: "repeated fields empty",
+			args: []string{
+				"types.TypesService.Repeated",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"strings":[],"integers":[],"doubles":[],"bools":[],"statuses":[],"nestedItems":[],"bytesList":[]}`,
+				"-r",
+			},
+			want: map[string]any{
+				"strings":     []any{},
+				"integers":    []any{},
+				"doubles":     []any{},
+				"bools":       []any{},
+				"statuses":    []any{},
+				"nestedItems": []any{},
+				"bytesList":   []any{},
+			},
+		},
+		{
+			name: "repeated fields not set",
+			args: []string{
+				"types.TypesService.Repeated",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{}`,
+				"-r",
+			},
+			want: map[string]any{
+				"strings":     []any{},
+				"integers":    []any{},
+				"doubles":     []any{},
+				"bools":       []any{},
+				"statuses":    []any{},
+				"nestedItems": []any{},
+				"bytesList":   []any{},
+			},
+		},
+		{
+			name: "repeated fields single values",
+			args: []string{
+				"types.TypesService.Repeated",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{` +
+					`"strings":["single"],` +
+					`"integers":[42],` +
+					`"doubles":[3.14],` +
+					`"bools":[false],` +
+					`"statuses":["FAILED"],` +
+					`"nestedItems":[{"value":"only","count":1}],` +
+					`"bytesList":["c2luZ2xl"]` +
+					`}`,
+				"-r",
+			},
+			want: map[string]any{
+				"strings":  []any{"single"},
+				"integers": []any{"42"},
+				"doubles":  []any{3.14},
+				"bools":    []any{false},
+				"statuses": []any{"FAILED"},
+				"nestedItems": []any{
+					map[string]any{"value": "only", "count": 1.0},
+				},
+				"bytesList": []any{"c2luZ2xl"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := runCall(fs, nil, tt.args...)
+			require.NoErrorf(t, err, "command failed with output: %s", string(b))
+
+			got := map[string]any{}
+			require.NoError(t, json.Unmarshal(b, &got))
+			require.Equal(t, tt.want, got)
+		})
+	}
 }

@@ -3,9 +3,7 @@ package test
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -15,11 +13,8 @@ import (
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
-	"google.golang.org/grpc/status"
 
 	"github.com/heartandu/easyrpc/internal/testdata"
 	"github.com/heartandu/easyrpc/pkg/tlsconf"
@@ -41,16 +36,20 @@ const (
 )
 
 func TestMain(m *testing.M) {
-	os.Exit(runTest(m))
+	code, err := runTest(m)
+	if err != nil {
+		log.Printf("error: %s", err)
+	}
+
+	os.Exit(code)
 }
 
-func runTest(m *testing.M) int {
+func runTest(m *testing.M) (int, error) {
 	fs := afero.NewOsFs()
 
 	cfg, err := tlsconf.Config(fs, cacert, cert, key)
 	if err != nil {
-		log.Printf("failed to get tls config: %v", err)
-		return 1
+		return 1, fmt.Errorf("failed to get tls config: %w", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -63,31 +62,28 @@ func runTest(m *testing.M) int {
 	defer tlsServer.Stop()
 
 	if err := serve(ctx, insecureServer, protocol, insecureSocket); err != nil {
-		log.Printf("failed to serve insecure server: %v", err)
-		return 1
+		return 1, fmt.Errorf("failed toerve insecure server: %w", err)
 	}
 
 	if err := serve(ctx, tlsServer, protocol, tlsSocket); err != nil {
-		log.Printf("failed to serve tls server: %v", err)
-		return 1
+		return 1, fmt.Errorf("failed to serve tls server: %w", err)
 	}
 
 	if err := serveWeb(ctx, grpcweb.WrapServer(insecureServer), protocol, insecureWebSocket, nil); err != nil {
-		log.Printf("failed to serve insecure web server: %v", err)
-		return 1
+		return 1, fmt.Errorf("failed to serve insecure web server: %w", err)
 	}
 
 	if err := serveWeb(ctx, grpcweb.WrapServer(insecureServer), protocol, tlsWebSocket, cfg); err != nil {
-		log.Printf("failed to serve tls web server: %v", err)
-		return 1
+		return 1, fmt.Errorf("failed to serve tls web server: %w", err)
 	}
 
-	return m.Run()
+	return m.Run(), nil
 }
 
 func newServer(opts ...grpc.ServerOption) *grpc.Server {
 	s := grpc.NewServer(opts...)
 	testdata.RegisterEchoServiceServer(s, &server{})
+	testdata.RegisterTypesServiceServer(s, &server{})
 	reflection.Register(s)
 
 	return s
@@ -145,115 +141,4 @@ func serveWeb(ctx context.Context, s *grpcweb.WrappedGrpcServer, protocol, socke
 	}()
 
 	return nil
-}
-
-type server struct {
-	testdata.UnimplementedEchoServiceServer
-}
-
-func (s *server) Echo(ctx context.Context, r *testdata.EchoRequest) (*testdata.EchoResponse, error) {
-	msg := r.GetMsg()
-
-	if testVal := s.getTestMDKey(ctx); testVal != "" {
-		msg += "\n" + testVal
-	}
-
-	return &testdata.EchoResponse{Msg: msg}, nil
-}
-
-func (*server) Error(_ context.Context, r *testdata.ErrorRequest) (*testdata.ErrorResponse, error) {
-	return nil, status.Error(codes.Internal, "internal error")
-}
-
-func (s *server) ClientStream(
-	stream grpc.ClientStreamingServer[testdata.ClientStreamRequest, testdata.ClientStreamResponse],
-) error {
-	resp := &testdata.ClientStreamResponse{}
-
-	for {
-		r, err := stream.Recv()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-
-			return fmt.Errorf("failed to receive message: %w", err)
-		}
-
-		resp.Msgs = append(resp.Msgs, r.GetMsg())
-	}
-
-	if testVal := s.getTestMDKey(stream.Context()); testVal != "" {
-		resp.Msgs = append(resp.Msgs, testVal)
-	}
-
-	if err := stream.SendAndClose(resp); err != nil {
-		return fmt.Errorf("failed to send message: %w", err)
-	}
-
-	return nil
-}
-
-func (s *server) ServerStream(
-	r *testdata.ServerStreamRequest,
-	stream grpc.ServerStreamingServer[testdata.ServerStreamResponse],
-) error {
-	for _, msg := range r.GetMsgs() {
-		if err := stream.Send(&testdata.ServerStreamResponse{Msg: msg}); err != nil {
-			return fmt.Errorf("failed to send message: %w", err)
-		}
-	}
-
-	if testVal := s.getTestMDKey(stream.Context()); testVal != "" {
-		if err := stream.Send(&testdata.ServerStreamResponse{Msg: testVal}); err != nil {
-			return fmt.Errorf("failed to send md message: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (s *server) BidiStream(
-	stream grpc.BidiStreamingServer[testdata.BidiStreamRequest, testdata.BidiStreamResponse],
-) error {
-	var responses []*testdata.BidiStreamResponse
-
-	for {
-		r, err := stream.Recv()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-
-			return fmt.Errorf("failed to receive message: %w", err)
-		}
-
-		responses = append(responses, &testdata.BidiStreamResponse{Msg: r.GetMsg()})
-	}
-
-	if testVal := s.getTestMDKey(stream.Context()); testVal != "" {
-		responses = append(responses, &testdata.BidiStreamResponse{Msg: testVal})
-	}
-
-	for _, resp := range responses {
-		if err := stream.Send(resp); err != nil {
-			return fmt.Errorf("failed to send message: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (*server) getTestMDKey(ctx context.Context) string {
-	const testMDKey = "test"
-
-	if md, ok := metadata.FromIncomingContext(ctx); ok && len(md.Get(testMDKey)) != 0 {
-		return md.Get(testMDKey)[0]
-	}
-
-	return ""
-}
-
-func address(socket string) string {
-	return "localhost" + socket
 }
