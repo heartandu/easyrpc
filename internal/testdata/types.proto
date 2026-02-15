@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package types;
+
+option go_package = "./testdata";
+
+import "common.proto";
+
+service TypesService {
+  rpc ScalarTypes(types.ScalarTypes) returns (types.ScalarTypes);
+  rpc EnumTypes(types.EnumTypes) returns (types.EnumTypes);
+  rpc Maps(types.Maps) returns (types.Maps);
+  rpc Oneof(types.Oneof) returns (types.Oneof);
+  rpc Nested(types.Nested) returns (types.Nested);
+  rpc Recursive(types.Recursive) returns (types.Recursive);
+  rpc Optional(types.Optional) returns (types.Optional);
+  rpc Repeated(types.Repeated) returns (types.Repeated);
+}
+
+// Scalar types - all protobuf scalar types
+message ScalarTypes {
+  double double_field = 1;
+  float float_field = 2;
+  int32 int32_field = 3;
+  int64 int64_field = 4;
+  uint32 uint32_field = 5;
+  uint64 uint64_field = 6;
+  sint32 sint32_field = 7;
+  sint64 sint64_field = 8;
+  fixed32 fixed32_field = 9;
+  fixed64 fixed64_field = 10;
+  sfixed32 sfixed32_field = 11;
+  sfixed64 sfixed64_field = 12;
+  bool bool_field = 13;
+  string string_field = 14;
+  bytes bytes_field = 15;
+}
+
+// Enums
+enum Status {
+  UNKNOWN = 0;
+  PENDING = 1;
+  RUNNING = 2;
+  COMPLETED = 3;
+  FAILED = 4;
+}
+
+enum Priority {
+  LOW = 0;
+  MEDIUM = 1;
+  HIGH = 2;
+  CRITICAL = 3;
+}
+
+message EnumTypes {
+  Status status = 1;
+  Priority priority = 2;
+}
+
+// Maps
+message Maps {
+  map<string, int32> string_to_int = 1;
+  map<int64, string> int_to_string = 2;
+  map<string, common.NestedInner> string_to_message = 3;
+  map<bool, float> bool_to_float = 4;
+}
+
+// Oneofs
+message Oneof {
+  oneof choice {
+    string text = 1;
+    int32 number = 2;
+    bool flag = 3;
+    common.NestedInner nested = 4;
+  }
+}
+
+// Nested messages - uses common types
+message Nested {
+  common.NestedOuter outer = 1;
+}
+
+// Recursive messages - uses common types
+message Recursive {
+  common.RecursiveNode node = 1;
+}
+
+// Optional fields (proto3 optional)
+message Optional {
+  optional string optional_string = 1;
+  optional int32 optional_int32 = 2;
+  optional bool optional_bool = 3;
+  optional common.NestedInner optional_nested = 4;
+  optional Status optional_enum = 5;
+}
+
+// Repeated fields
+message Repeated {
+  repeated string strings = 1;
+  repeated int64 integers = 2;
+  repeated double doubles = 3;
+  repeated bool bools = 4;
+  repeated Status statuses = 5;
+  repeated common.NestedInner nested_items = 6;
+  repeated bytes bytes_list = 7;
+}

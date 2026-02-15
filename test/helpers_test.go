@@ -46,3 +46,7 @@ func run(fs afero.Fs, input io.Reader, args ...string) ([]byte, error) {
 
 	return buf.Bytes(), err
 }
+
+func address(socket string) string {
+	return "localhost" + socket
+}

@@ -98,12 +98,12 @@ func TestPackageFlagCompletion(t *testing.T) {
 		{
 			name: "empty flag reflection",
 			args: []string{"-r", "-a", address(insecureSocket), "--package", ""},
-			want: []string{"echo", "grpc.reflection.v1", "grpc.reflection.v1alpha"},
+			want: []string{"echo", "grpc.reflection.v1", "grpc.reflection.v1alpha", "types"},
 		},
 		{
 			name: "empty flag reflection with config",
 			args: []string{"--config", reflectConf, "--package", ""},
-			want: []string{"echo", "grpc.reflection.v1", "grpc.reflection.v1alpha"},
+			want: []string{"echo", "grpc.reflection.v1", "grpc.reflection.v1alpha", "types"},
 		},
 		{
 			name: "partial complete",
@@ -194,6 +194,7 @@ func TestServiceFlagCompletion(t *testing.T) {
 				"echo.EchoService",
 				"grpc.reflection.v1.ServerReflection",
 				"grpc.reflection.v1alpha.ServerReflection",
+				"types.TypesService",
 			},
 		},
 		{
