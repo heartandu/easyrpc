@@ -385,5 +385,5 @@ func TestCallAutocomplete(t *testing.T) {
 }
 
 func runCallAutocomplete(fs afero.Fs, args ...string) ([]byte, error) {
-	return run(fs, nil, append([]string{"__complete", "call"}, args...)...)
+	return run(fs, nil, nil, append([]string{"__complete", "call"}, args...)...)
 }
