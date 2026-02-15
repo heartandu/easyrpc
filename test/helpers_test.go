@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/afero"
 
@@ -12,7 +13,7 @@ import (
 )
 
 func createTempFile(fs afero.Fs, name, contents string) (string, error) {
-	file, err := fs.Create(name)
+	file, err := fs.Create(filepath.Join(afero.GetTempDir(fs, ""), name))
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp file: %w", err)
 	}
@@ -25,12 +26,28 @@ func createTempFile(fs afero.Fs, name, contents string) (string, error) {
 	return file.Name(), nil
 }
 
-func run(fs afero.Fs, input io.Reader, args ...string) ([]byte, error) {
+func run(fs afero.Fs, input io.Reader, env map[string]string, args ...string) ([]byte, error) {
 	oldArgs := os.Args
 
 	defer func() { os.Args = oldArgs }()
 
 	os.Args = append([]string{"easyrpc"}, args...)
+
+	oldEnv := make(map[string]string)
+	for k, v := range env {
+		oldEnv[k] = os.Getenv(k)
+		if err := os.Setenv(k, v); err != nil {
+			return nil, fmt.Errorf("failed to set env var %s: %w", k, err)
+		}
+	}
+
+	defer func() {
+		for k, v := range oldEnv {
+			if err := os.Setenv(k, v); err != nil {
+				fmt.Fprintf(os.Stderr, "failed to restore env var %s: %v\n", k, err)
+			}
+		}
+	}()
 
 	buf := bytes.NewBuffer(nil)
 

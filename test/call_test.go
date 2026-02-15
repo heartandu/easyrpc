@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -487,10 +488,6 @@ func TestCall(t *testing.T) {
 			require.Equal(t, tt.want, got)
 		})
 	}
-}
-
-func runCall(fs afero.Fs, in io.Reader, args ...string) ([]byte, error) {
-	return run(fs, in, append([]string{"call"}, args...)...)
 }
 
 func TestCall_Types(t *testing.T) {
@@ -1003,4 +1000,156 @@ func TestCall_Types(t *testing.T) {
 			require.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func runCall(fs afero.Fs, in io.Reader, args ...string) ([]byte, error) {
+	return run(fs, in, nil, append([]string{"call"}, args...)...)
+}
+
+func TestCall_WithEditor(t *testing.T) {
+	tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0)
+	if err != nil {
+		t.Skip("Skipping test: no TTY available")
+	}
+
+	tty.Close()
+
+	// This test requires OS filesystem so the external editor command can read temporary files.
+	fs := afero.NewOsFs()
+
+	mockEditorFile, err := createTempFile(fs, "mock_editor.sh", `
+if ! grep -q '$schema' "$1"; then
+	echo "Error: \$schema field not found in input" >&2
+	exit 1
+fi
+echo '{"msg": "edited message"}' > "$1"`)
+	require.NoError(t, err)
+	t.Cleanup(func() { fs.Remove(mockEditorFile) })
+
+	mockEditorLongFlagFile, err := createTempFile(fs, "mock_editor_long.sh", `
+if ! grep -q '$schema' "$1"; then
+	echo "Error: \$schema field not found in input" >&2
+	exit 1
+fi
+echo '{"msg": "long flag edited"}' > "$1"`)
+	require.NoError(t, err)
+	t.Cleanup(func() { fs.Remove(mockEditorLongFlagFile) })
+
+	// Mock editor that appends "_edited" to the msg value for streaming tests
+	mockEditorStreamingFile, err := createTempFile(fs, "mock_editor_streaming.sh", `
+if ! grep -q '$schema' "$1"; then
+	echo "Error: \$schema field not found in input" >&2
+	exit 1
+fi
+msg_value=$(grep -o '"msg": *"[^"]*"' "$1" | sed 's/.*"msg": *"\([^"]*\)".*/\1/')
+echo "{\"msg\": \"${msg_value}_edited\"}" > "$1"`)
+	require.NoError(t, err)
+	t.Cleanup(func() { fs.Remove(mockEditorStreamingFile) })
+
+	tests := []struct {
+		name   string
+		editor string
+		args   []string
+		want   []map[string]any
+	}{
+		{
+			name:   "with short editor flag",
+			editor: "sh " + mockEditorFile,
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-r",
+				"-e",
+			},
+			want: []map[string]any{{"msg": "edited message"}},
+		},
+		{
+			name:   "with long editor flag",
+			editor: "sh " + mockEditorLongFlagFile,
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-r",
+				"--edit",
+			},
+			want: []map[string]any{{"msg": "long flag edited"}},
+		},
+		{
+			name:   "client streaming with editor edits all messages",
+			editor: "sh " + mockEditorStreamingFile,
+			args: []string{
+				"echo.EchoService.ClientStream",
+				"-a",
+				address(insecureSocket),
+				"-r",
+				"-e",
+				"-d",
+				`{"msg":"1"}{"msg":"2"}{"msg":"3"}`,
+			},
+			want: []map[string]any{{"msgs": []any{"1_edited", "2_edited", "3_edited"}}},
+		},
+		{
+			name:   "bidi streaming with editor edits all messages",
+			editor: "sh " + mockEditorStreamingFile,
+			args: []string{
+				"echo.EchoService.BidiStream",
+				"-a",
+				address(insecureSocket),
+				"-r",
+				"-e",
+				"-d",
+				`{"msg":"a"}{"msg":"b"}`,
+			},
+			want: []map[string]any{{"msg": "a_edited"}, {"msg": "b_edited"}},
+		},
+		{
+			name:   "client streaming with single message",
+			editor: "sh " + mockEditorStreamingFile,
+			args: []string{
+				"echo.EchoService.ClientStream",
+				"-a",
+				address(insecureSocket),
+				"-r",
+				"-e",
+				"-d",
+				`{"msg":"single"}`,
+			},
+			want: []map[string]any{{"msgs": []any{"single_edited"}}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := runCallWithEditor(fs, tt.editor, tt.args...)
+			require.NoErrorf(t, err, "command failed with output: %s", string(b))
+
+			got := []map[string]any{}
+			d := json.NewDecoder(bytes.NewReader(b))
+
+			for {
+				v := map[string]any{}
+				if err := d.Decode(&v); err != nil {
+					if errors.Is(err, io.EOF) {
+						break
+					}
+
+					t.Fatalf("failed to decode output: %v", err)
+				}
+
+				got = append(got, v)
+			}
+
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func runCallWithEditor(fs afero.Fs, editor string, args ...string) ([]byte, error) {
+	env := map[string]string{
+		"EDITOR": editor,
+	}
+
+	return run(fs, nil, env, append([]string{"call"}, args...)...)
 }

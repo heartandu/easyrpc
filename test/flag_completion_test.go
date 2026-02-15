@@ -229,5 +229,5 @@ func TestServiceFlagCompletion(t *testing.T) {
 }
 
 func runRootCmdAutocomplete(fs afero.Fs, args ...string) ([]byte, error) {
-	return run(fs, nil, append([]string{"__complete"}, args...)...)
+	return run(fs, nil, nil, append([]string{"__complete"}, args...)...)
 }
