@@ -23,7 +23,7 @@ a more convenient tool for users.
   * [Metadata](#metadata)
   * [Input data](#input-data)
   * [Request data preparation](#request-data-preparation)
-  * [Edit request before call/printout](#edit-request-before-call/printout)
+  * [Edit request before call/printout](#edit-request-before-call-printout)
   * [Autocompletion](#autocompletion)
   * [Configuration files](#configuration-files)
   * [gRPC-Web](#grpc-web)
