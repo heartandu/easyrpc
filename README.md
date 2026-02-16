@@ -59,7 +59,7 @@ or verify that the installed binary is accessible in one of the standard `PATH` 
 
 ### Register autocompletion
 
-To begin using it, you must register the autocompletions script for your preferred shell.
+To begin using it, you must register the autocompletion script for your preferred shell.
 Please refer to the `easyrpc completion -h` command help to learn how to register completions for specific shells.
 
 ## Usage
@@ -207,6 +207,11 @@ You can edit the request data before call or request printout. The editor can be
 variable or in the `editor: ""` [configuration file](#configuration-files) field. If no editor has been set, the system
 default will be used instead.
 
+> [!NOTE]
+> If you're using a GUI editor, make sure to use `--wait` or `-w` flag if the editor supports it. This way the command
+> will wait until the temporary file is closed before proceeding. Otherwise, EasyRPC will continue operation immediately
+> and no changes to the temporary file will be respected.
+
 ```shell
 # Add -e (--edit) flag to open a temporary request file in an external editor. Requests edited contain $schema file link
 # with a temporary JSON Schema for selected method request message which allows JSON LSP to provide field autocompletion
@@ -238,7 +243,7 @@ $ easyrpc c -a localhost:12345 -r Me[tab]
 # Will result in
 $ easyrpc c -a localhost:12345 -r example.package.Service.Method
 
-# Or inputing this
+# Or inputting this
 $ easyrpc c -i path/to/proto -p example.proto Me[tab]
 
 # Will result in
@@ -315,6 +320,9 @@ The precedence of the locations is as follows:
 
 You can initialize the configuration with empty values in the current working directory by running `easyrpc config init`.
 If you want to inspect the resulting configuration that will be used by `easyrpc`, run `easyrpc config dump`.
+
+For configuration autocompletion and validation you can use the [easyrpc.schema.json](easyrpc.schema.json) JSON Schema
+with your preferred editor or LSP.
 
 ### gRPC-Web
 
