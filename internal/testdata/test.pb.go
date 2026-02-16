@@ -466,7 +466,7 @@ var File_test_proto protoreflect.FileDescriptor
 const file_test_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"test.proto\x12\x04echo\x1a\fcommon.proto\"\x1f\n" +
+	"test.proto\x12\x04echo\"\x1f\n" +
 	"\vEchoRequest\x12\x10\n" +
 	"\x03msg\x18\x01 \x01(\tR\x03msg\" \n" +
 	"\fEchoResponse\x12\x10\n" +
@@ -493,8 +493,7 @@ const file_test_proto_rawDesc = "" +
 	"\fClientStream\x12\x19.echo.ClientStreamRequest\x1a\x1a.echo.ClientStreamResponse\"\x00(\x01\x12I\n" +
 	"\fServerStream\x12\x19.echo.ServerStreamRequest\x1a\x1a.echo.ServerStreamResponse\"\x000\x01\x12E\n" +
 	"\n" +
-	"BidiStream\x12\x17.echo.BidiStreamRequest\x1a\x18.echo.BidiStreamResponse\"\x00(\x010\x01B\fZ\n" +
-	"./testdatab\x06proto3"
+	"BidiStream\x12\x17.echo.BidiStreamRequest\x1a\x18.echo.BidiStreamResponse\"\x00(\x010\x01B0Z.github.com/heartandu/easyrpc/internal/testdatab\x06proto3"
 
 var (
 	file_test_proto_rawDescOnce sync.Once
@@ -544,7 +543,6 @@ func file_test_proto_init() {
 	if File_test_proto != nil {
 		return
 	}
-	file_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

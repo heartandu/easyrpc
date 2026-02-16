@@ -506,8 +506,8 @@ func TestCall_Types(t *testing.T) {
 				address(insecureSocket),
 				"-d",
 				`{` +
-					`"doubleField":1.7976931348623157e+308,` +
-					`"floatField":3.4028235e+38,` +
+					`"doubleField":1.79769313486231570814527423731704356798070e+308,` +
+					`"floatField":3.40282346638528859811704183484516925440e+38,` +
 					`"int32Field":2147483647,` +
 					`"int64Field":9223372036854775807,` +
 					`"uint32Field":4294967295,` +
@@ -525,7 +525,7 @@ func TestCall_Types(t *testing.T) {
 				"-r",
 			},
 			want: map[string]any{
-				"doubleField":   1.7976931348623157e+308,
+				"doubleField":   1.79769313486231570814527423731704356798070e+308,
 				"floatField":    3.4028235e+38,
 				"int32Field":    2147483647.0,
 				"int64Field":    "9223372036854775807",
@@ -697,7 +697,7 @@ func TestCall_Types(t *testing.T) {
 				`{` +
 					`"stringToInt":{"key1":100,"key2":200},` +
 					`"intToString":{"123":"value1","456":"value2"},` +
-					`"stringToMessage":{"msg1":{"value":"test","count":5}},` +
+					`"stringToMessage":{"msg1":{"id":5}},` +
 					`"boolToFloat":{"true":3.14,"false":2.71}` +
 					`}`,
 				"-r",
@@ -706,7 +706,7 @@ func TestCall_Types(t *testing.T) {
 				"stringToInt": map[string]any{"key1": 100.0, "key2": 200.0},
 				"intToString": map[string]any{"123": "value1", "456": "value2"},
 				"stringToMessage": map[string]any{
-					"msg1": map[string]any{"value": "test", "count": 5.0},
+					"msg1": map[string]any{"id": "5"},
 				},
 				"boolToFloat": map[string]any{"true": 3.14, "false": 2.71},
 			},
@@ -765,47 +765,31 @@ func TestCall_Types(t *testing.T) {
 			want: map[string]any{"flag": true},
 		},
 		{
-			name: "oneof with nested message",
+			name: "oneof with inner message",
 			args: []string{
 				"types.TypesService.Oneof",
 				"-a",
 				address(insecureSocket),
 				"-d",
-				`{"nested":{"value":"nested value","count":99}}`,
+				`{"inner":{"id":99}}`,
 				"-r",
 			},
 			want: map[string]any{
-				"nested": map[string]any{"value": "nested value", "count": 99.0},
+				"inner": map[string]any{"id": "99"},
 			},
 		},
 		{
-			name: "nested messages",
+			name: "imported message",
 			args: []string{
-				"types.TypesService.Nested",
+				"types.TypesService.Imported",
 				"-a",
 				address(insecureSocket),
 				"-d",
-				`{` +
-					`"outer":{` +
-					`"id":"outer-id",` +
-					`"middle":{"name":"middle-name","inner":{"value":"inner-value","count":123}},` +
-					`"items":[{"value":"item1","count":1},{"value":"item2","count":2}]` +
-					`}` +
-					`}`,
+				`{"imported":{"id":"imported-id"}}`,
 				"-r",
 			},
 			want: map[string]any{
-				"outer": map[string]any{
-					"id": "outer-id",
-					"middle": map[string]any{
-						"name":  "middle-name",
-						"inner": map[string]any{"value": "inner-value", "count": 123.0},
-					},
-					"items": []any{
-						map[string]any{"value": "item1", "count": 1.0},
-						map[string]any{"value": "item2", "count": 2.0},
-					},
-				},
+				"imported": map[string]any{"id": "imported-id"},
 			},
 		},
 		{
@@ -848,7 +832,7 @@ func TestCall_Types(t *testing.T) {
 					`"optionalString":"test",` +
 					`"optionalInt32":42,` +
 					`"optionalBool":true,` +
-					`"optionalNested":{"value":"nested","count":5},` +
+					`"optionalInner":{"id":5},` +
 					`"optionalEnum":"COMPLETED"` +
 					`}`,
 				"-r",
@@ -857,7 +841,7 @@ func TestCall_Types(t *testing.T) {
 				"optionalString": "test",
 				"optionalInt32":  42.0,
 				"optionalBool":   true,
-				"optionalNested": map[string]any{"value": "nested", "count": 5.0},
+				"optionalInner":  map[string]any{"id": "5"},
 				"optionalEnum":   "COMPLETED",
 			},
 		},
@@ -901,7 +885,7 @@ func TestCall_Types(t *testing.T) {
 					`"doubles":[1.1,2.2,3.3],` +
 					`"bools":[true,false,true],` +
 					`"statuses":["PENDING","RUNNING","COMPLETED"],` +
-					`"nestedItems":[{"value":"item1","count":10},{"value":"item2","count":20}],` +
+					`"innerItems":[{"id":10},{"id":20}],` +
 					`"bytesList":["aGVsbG8=","d29ybGQ="]` +
 					`}`,
 				"-r",
@@ -912,9 +896,9 @@ func TestCall_Types(t *testing.T) {
 				"doubles":  []any{1.1, 2.2, 3.3},
 				"bools":    []any{true, false, true},
 				"statuses": []any{"PENDING", "RUNNING", "COMPLETED"},
-				"nestedItems": []any{
-					map[string]any{"value": "item1", "count": 10.0},
-					map[string]any{"value": "item2", "count": 20.0},
+				"innerItems": []any{
+					map[string]any{"id": "10"},
+					map[string]any{"id": "20"},
 				},
 				"bytesList": []any{"aGVsbG8=", "d29ybGQ="},
 			},
@@ -926,17 +910,17 @@ func TestCall_Types(t *testing.T) {
 				"-a",
 				address(insecureSocket),
 				"-d",
-				`{"strings":[],"integers":[],"doubles":[],"bools":[],"statuses":[],"nestedItems":[],"bytesList":[]}`,
+				`{"strings":[],"integers":[],"doubles":[],"bools":[],"statuses":[],"innerItems":[],"bytesList":[]}`,
 				"-r",
 			},
 			want: map[string]any{
-				"strings":     []any{},
-				"integers":    []any{},
-				"doubles":     []any{},
-				"bools":       []any{},
-				"statuses":    []any{},
-				"nestedItems": []any{},
-				"bytesList":   []any{},
+				"strings":    []any{},
+				"integers":   []any{},
+				"doubles":    []any{},
+				"bools":      []any{},
+				"statuses":   []any{},
+				"innerItems": []any{},
+				"bytesList":  []any{},
 			},
 		},
 		{
@@ -950,13 +934,13 @@ func TestCall_Types(t *testing.T) {
 				"-r",
 			},
 			want: map[string]any{
-				"strings":     []any{},
-				"integers":    []any{},
-				"doubles":     []any{},
-				"bools":       []any{},
-				"statuses":    []any{},
-				"nestedItems": []any{},
-				"bytesList":   []any{},
+				"strings":    []any{},
+				"integers":   []any{},
+				"doubles":    []any{},
+				"bools":      []any{},
+				"statuses":   []any{},
+				"innerItems": []any{},
+				"bytesList":  []any{},
 			},
 		},
 		{
@@ -972,7 +956,7 @@ func TestCall_Types(t *testing.T) {
 					`"doubles":[3.14],` +
 					`"bools":[false],` +
 					`"statuses":["FAILED"],` +
-					`"nestedItems":[{"value":"only","count":1}],` +
+					`"innerItems":[{"id":1}],` +
 					`"bytesList":["c2luZ2xl"]` +
 					`}`,
 				"-r",
@@ -983,8 +967,8 @@ func TestCall_Types(t *testing.T) {
 				"doubles":  []any{3.14},
 				"bools":    []any{false},
 				"statuses": []any{"FAILED"},
-				"nestedItems": []any{
-					map[string]any{"value": "only", "count": 1.0},
+				"innerItems": []any{
+					map[string]any{"id": "1"},
 				},
 				"bytesList": []any{"c2luZ2xl"},
 			},

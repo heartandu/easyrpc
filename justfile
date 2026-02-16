@@ -14,7 +14,7 @@ lint:
     golangci-lint run
 
 protoc:
-    @protoc --go_out=internal/testdata --go-grpc_out=internal/testdata -I=internal/testdata --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative internal/testdata/common.proto internal/testdata/types.proto internal/testdata/test.proto
+    @protoc --go_out=internal/testdata --go-grpc_out=internal/testdata -I=internal/testdata --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative internal/testdata/types.proto internal/testdata/test.proto internal/testdata/common/common.proto
 
 gen-certs:
     cd internal/testdata && zsh ../../gen_certs.sh
