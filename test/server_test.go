@@ -49,7 +49,7 @@ func (*server) Oneof(_ context.Context, r *testdata.Oneof) (*testdata.Oneof, err
 	return r, nil
 }
 
-func (*server) Nested(_ context.Context, r *testdata.Nested) (*testdata.Nested, error) {
+func (*server) Imported(_ context.Context, r *testdata.Imported) (*testdata.Imported, error) {
 	return r, nil
 }
 

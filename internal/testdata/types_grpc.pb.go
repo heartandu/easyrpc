@@ -23,7 +23,7 @@ const (
 	TypesService_EnumTypes_FullMethodName   = "/types.TypesService/EnumTypes"
 	TypesService_Maps_FullMethodName        = "/types.TypesService/Maps"
 	TypesService_Oneof_FullMethodName       = "/types.TypesService/Oneof"
-	TypesService_Nested_FullMethodName      = "/types.TypesService/Nested"
+	TypesService_Imported_FullMethodName    = "/types.TypesService/Imported"
 	TypesService_Recursive_FullMethodName   = "/types.TypesService/Recursive"
 	TypesService_Optional_FullMethodName    = "/types.TypesService/Optional"
 	TypesService_Repeated_FullMethodName    = "/types.TypesService/Repeated"
@@ -37,7 +37,7 @@ type TypesServiceClient interface {
 	EnumTypes(ctx context.Context, in *EnumTypes, opts ...grpc.CallOption) (*EnumTypes, error)
 	Maps(ctx context.Context, in *Maps, opts ...grpc.CallOption) (*Maps, error)
 	Oneof(ctx context.Context, in *Oneof, opts ...grpc.CallOption) (*Oneof, error)
-	Nested(ctx context.Context, in *Nested, opts ...grpc.CallOption) (*Nested, error)
+	Imported(ctx context.Context, in *Imported, opts ...grpc.CallOption) (*Imported, error)
 	Recursive(ctx context.Context, in *Recursive, opts ...grpc.CallOption) (*Recursive, error)
 	Optional(ctx context.Context, in *Optional, opts ...grpc.CallOption) (*Optional, error)
 	Repeated(ctx context.Context, in *Repeated, opts ...grpc.CallOption) (*Repeated, error)
@@ -91,10 +91,10 @@ func (c *typesServiceClient) Oneof(ctx context.Context, in *Oneof, opts ...grpc.
 	return out, nil
 }
 
-func (c *typesServiceClient) Nested(ctx context.Context, in *Nested, opts ...grpc.CallOption) (*Nested, error) {
+func (c *typesServiceClient) Imported(ctx context.Context, in *Imported, opts ...grpc.CallOption) (*Imported, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Nested)
-	err := c.cc.Invoke(ctx, TypesService_Nested_FullMethodName, in, out, cOpts...)
+	out := new(Imported)
+	err := c.cc.Invoke(ctx, TypesService_Imported_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ type TypesServiceServer interface {
 	EnumTypes(context.Context, *EnumTypes) (*EnumTypes, error)
 	Maps(context.Context, *Maps) (*Maps, error)
 	Oneof(context.Context, *Oneof) (*Oneof, error)
-	Nested(context.Context, *Nested) (*Nested, error)
+	Imported(context.Context, *Imported) (*Imported, error)
 	Recursive(context.Context, *Recursive) (*Recursive, error)
 	Optional(context.Context, *Optional) (*Optional, error)
 	Repeated(context.Context, *Repeated) (*Repeated, error)
@@ -165,8 +165,8 @@ func (UnimplementedTypesServiceServer) Maps(context.Context, *Maps) (*Maps, erro
 func (UnimplementedTypesServiceServer) Oneof(context.Context, *Oneof) (*Oneof, error) {
 	return nil, status.Error(codes.Unimplemented, "method Oneof not implemented")
 }
-func (UnimplementedTypesServiceServer) Nested(context.Context, *Nested) (*Nested, error) {
-	return nil, status.Error(codes.Unimplemented, "method Nested not implemented")
+func (UnimplementedTypesServiceServer) Imported(context.Context, *Imported) (*Imported, error) {
+	return nil, status.Error(codes.Unimplemented, "method Imported not implemented")
 }
 func (UnimplementedTypesServiceServer) Recursive(context.Context, *Recursive) (*Recursive, error) {
 	return nil, status.Error(codes.Unimplemented, "method Recursive not implemented")
@@ -270,20 +270,20 @@ func _TypesService_Oneof_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TypesService_Nested_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Nested)
+func _TypesService_Imported_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Imported)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TypesServiceServer).Nested(ctx, in)
+		return srv.(TypesServiceServer).Imported(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TypesService_Nested_FullMethodName,
+		FullMethod: TypesService_Imported_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TypesServiceServer).Nested(ctx, req.(*Nested))
+		return srv.(TypesServiceServer).Imported(ctx, req.(*Imported))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -366,8 +366,8 @@ var TypesService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TypesService_Oneof_Handler,
 		},
 		{
-			MethodName: "Nested",
-			Handler:    _TypesService_Nested_Handler,
+			MethodName: "Imported",
+			Handler:    _TypesService_Imported_Handler,
 		},
 		{
 			MethodName: "Recursive",

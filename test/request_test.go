@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCall(t *testing.T) {
+func TestRequest(t *testing.T) {
 	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
 
 	requestFileName, err := createTempFile(fs, "msg.json", `{"msg":"file test"}`)
@@ -26,7 +26,6 @@ func TestCall(t *testing.T) {
 	require.NoError(t, err, "failed to create input file with unknown fields")
 
 	protoConfigFileName, err := createTempFile(fs, "proto.yaml", `
-        address: `+address(insecureSocket)+`
         import_paths:
           - `+importPath+`
         proto_files:
@@ -34,7 +33,6 @@ func TestCall(t *testing.T) {
 	require.NoError(t, err, "failed to create proto config file")
 
 	protoImportAllConfigFileName, err := createTempFile(fs, "proto_import_all.yaml", `
-        address: `+address(insecureSocket)+`
         import_paths:
           - `+importPath+`
         import_all: true`)
@@ -61,18 +59,11 @@ func TestCall(t *testing.T) {
         service: EchoService`)
 	require.NoError(t, err, "failed to create proto config file")
 
-	mdConfigFileName, err := createTempFile(fs, "md.yaml", `
-        address: `+address(insecureSocket)+`
-        reflection: true
-        metadata:
-          test: config`)
-	require.NoError(t, err, "failed to create metadata config file")
-
 	webConfigFileName, err := createTempFile(fs, "web.yaml", `
         address: `+address(insecureWebSocket)+`
         reflection: true
         web: true`)
-	require.NoError(t, err, "failed to create metadata config file")
+	require.NoError(t, err, "failed to create web config file")
 
 	webTLSConfigFileName, err := createTempFile(fs, "webTLS.yaml", `
         address: `+address(tlsWebSocket)+`
@@ -82,20 +73,18 @@ func TestCall(t *testing.T) {
         reflection: true
         tls: true
         web: true`)
-	require.NoError(t, err, "failed to create metadata config file")
+	require.NoError(t, err, "failed to create web TLS config file")
 
 	tests := []struct {
 		name string
 		args []string
 		in   io.Reader
-		want []map[string]any
+		want map[string]any
 	}{
 		{
 			name: "by proto",
 			args: []string{
 				"echo.EchoService.Echo",
-				"-a",
-				address(insecureSocket),
 				"-d",
 				`{"msg":"oops"}`,
 				"-i",
@@ -103,21 +92,19 @@ func TestCall(t *testing.T) {
 				"-p",
 				protoFile,
 			},
-			want: []map[string]any{{"msg": "oops"}},
+			want: map[string]any{"msg": "oops"},
 		},
 		{
 			name: "by proto with import all",
 			args: []string{
 				"echo.EchoService.Echo",
-				"-a",
-				address(insecureSocket),
 				"-d",
 				`{"msg":"good"}`,
 				"-i",
 				importPath,
 				"--import-all",
 			},
-			want: []map[string]any{{"msg": "good"}},
+			want: map[string]any{"msg": "good"},
 		},
 		{
 			name: "by reflection",
@@ -129,9 +116,8 @@ func TestCall(t *testing.T) {
 				`{"msg":"hello"}`,
 				"-r",
 			},
-			want: []map[string]any{{"msg": "hello"}},
+			want: map[string]any{"msg": "hello"},
 		},
-
 		{
 			name: "data from flag with unknown field",
 			args: []string{
@@ -142,7 +128,7 @@ func TestCall(t *testing.T) {
 				`{"$schema":"https://example.com/some/schema.json","msg":"with unknown"}`,
 				"-r",
 			},
-			want: []map[string]any{{"msg": "with unknown"}},
+			want: map[string]any{"msg": "with unknown"},
 		},
 		{
 			name: "data from file",
@@ -154,7 +140,7 @@ func TestCall(t *testing.T) {
 				"@" + requestFileName,
 				"-r",
 			},
-			want: []map[string]any{{"msg": "file test"}},
+			want: map[string]any{"msg": "file test"},
 		},
 		{
 			name: "data from file with unknown field",
@@ -166,7 +152,7 @@ func TestCall(t *testing.T) {
 				"@" + reqWithUnknownFileName,
 				"-r",
 			},
-			want: []map[string]any{{"msg": "file with unknown"}},
+			want: map[string]any{"msg": "file with unknown"},
 		},
 		{
 			name: "data from stdin",
@@ -179,7 +165,7 @@ func TestCall(t *testing.T) {
 				"-r",
 			},
 			in:   strings.NewReader(`{"msg":"stdin test"}`),
-			want: []map[string]any{{"msg": "stdin test"}},
+			want: map[string]any{"msg": "stdin test"},
 		},
 		{
 			name: "data from stdin with unknown field",
@@ -192,9 +178,18 @@ func TestCall(t *testing.T) {
 				"-r",
 			},
 			in:   strings.NewReader(`{"$schema":"https://example.com/some/schema.json","msg":"stdin with unknown"}`),
-			want: []map[string]any{{"msg": "stdin with unknown"}},
+			want: map[string]any{"msg": "stdin with unknown"},
 		},
-
+		{
+			name: "empty data outputs template",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-r",
+			},
+			want: map[string]any{"msg": ""},
+		},
 		{
 			name: "by proto with config",
 			args: []string{
@@ -204,7 +199,7 @@ func TestCall(t *testing.T) {
 				"-d",
 				`{"msg":"proto config"}`,
 			},
-			want: []map[string]any{{"msg": "proto config"}},
+			want: map[string]any{"msg": "proto config"},
 		},
 		{
 			name: "by proto import all with config",
@@ -215,7 +210,7 @@ func TestCall(t *testing.T) {
 				"-d",
 				`{"msg":"proto import all"}`,
 			},
-			want: []map[string]any{{"msg": "proto import all"}},
+			want: map[string]any{"msg": "proto import all"},
 		},
 		{
 			name: "by reflection with config",
@@ -226,9 +221,8 @@ func TestCall(t *testing.T) {
 				"-d",
 				`{"msg":"reflection config"}`,
 			},
-			want: []map[string]any{{"msg": "reflection config"}},
+			want: map[string]any{"msg": "reflection config"},
 		},
-
 		{
 			name: "tls with only root certificate",
 			args: []string{
@@ -242,7 +236,7 @@ func TestCall(t *testing.T) {
 				"--cacert",
 				cacert,
 			},
-			want: []map[string]any{{"msg": "tls"}},
+			want: map[string]any{"msg": "tls"},
 		},
 		{
 			name: "tls with server certificates",
@@ -261,7 +255,7 @@ func TestCall(t *testing.T) {
 				"--key",
 				key,
 			},
-			want: []map[string]any{{"msg": "tls certs"}},
+			want: map[string]any{"msg": "tls certs"},
 		},
 		{
 			name: "tls with server certificates config",
@@ -272,9 +266,8 @@ func TestCall(t *testing.T) {
 				"-d",
 				`{"msg":"tls certs config"}`,
 			},
-			want: []map[string]any{{"msg": "tls certs config"}},
+			want: map[string]any{"msg": "tls certs config"},
 		},
-
 		{
 			name: "package flag specified",
 			args: []string{
@@ -287,7 +280,7 @@ func TestCall(t *testing.T) {
 				"--package",
 				"echo",
 			},
-			want: []map[string]any{{"msg": "package flag"}},
+			want: map[string]any{"msg": "package flag"},
 		},
 		{
 			name: "package and service flag specified",
@@ -303,7 +296,7 @@ func TestCall(t *testing.T) {
 				"--service",
 				"EchoService",
 			},
-			want: []map[string]any{{"msg": "package and service flags"}},
+			want: map[string]any{"msg": "package and service flags"},
 		},
 		{
 			name: "package and service config file specified",
@@ -314,90 +307,10 @@ func TestCall(t *testing.T) {
 				"-d",
 				`{"msg":"package and service flags"}`,
 			},
-			want: []map[string]any{{"msg": "package and service flags"}},
+			want: map[string]any{"msg": "package and service flags"},
 		},
 		{
-			name: "with metadata flag",
-			args: []string{
-				"echo.EchoService.Echo",
-				"-r",
-				"-a",
-				address(insecureSocket),
-				"-d",
-				`{"msg":"md flag"}`,
-				"-H",
-				"test=test",
-			},
-			want: []map[string]any{{"msg": "md flag\ntest"}},
-		},
-		{
-			name: "with metadata in config",
-			args: []string{
-				"echo.EchoService.Echo",
-				"--config",
-				mdConfigFileName,
-				"-d",
-				`{"msg":"md flag"}`,
-			},
-			want: []map[string]any{{"msg": "md flag\nconfig"}},
-		},
-		{
-			name: "with metadata flag precedence",
-			args: []string{
-				"echo.EchoService.Echo",
-				"--config",
-				mdConfigFileName,
-				"-d",
-				`{"msg":"md flag"}`,
-				"-H",
-				"test=overwritten",
-			},
-			want: []map[string]any{{"msg": "md flag\noverwritten"}},
-		},
-		{
-			name: "client streaming request",
-			args: []string{
-				"echo.EchoService.ClientStream",
-				"-r",
-				"-a",
-				address(insecureSocket),
-				"-d",
-				`{"msg":"1"}{"msg":"3"}{"msg":"2"}`,
-				"-H",
-				"test=321",
-			},
-			want: []map[string]any{{"msgs": []any{"1", "3", "2", "321"}}},
-		},
-		{
-			name: "server streaming request",
-			args: []string{
-				"echo.EchoService.ServerStream",
-				"-r",
-				"-a",
-				address(insecureSocket),
-				"-d",
-				`{"msgs":["1", "3", "2"]}`,
-				"-H",
-				"test=321",
-			},
-			want: []map[string]any{{"msg": "1"}, {"msg": "3"}, {"msg": "2"}, {"msg": "321"}},
-		},
-		{
-			name: "bidi streaming request",
-			args: []string{
-				"echo.EchoService.BidiStream",
-				"-r",
-				"-a",
-				address(insecureSocket),
-				"-d",
-				`{"msg":"1"}{"msg":"3"}{"msg":"2"}`,
-				"-H",
-				"test=321",
-			},
-			want: []map[string]any{{"msg": "1"}, {"msg": "3"}, {"msg": "2"}, {"msg": "321"}},
-		},
-		{
-			name: "web unary request with config",
+			name: "web request with config",
 			args: []string{
 				"echo.EchoService.Echo",
 				"--config",
@@ -405,67 +318,81 @@ func TestCall(t *testing.T) {
 				"-d",
 				`{"msg":"web config"}`,
 			},
-			want: []map[string]any{{"msg": "web config"}},
+			want: map[string]any{"msg": "web config"},
 		},
 		{
-			name: "web unary request",
+			name: "web request",
 			args: []string{
 				"echo.EchoService.Echo",
 				"-a",
 				address(insecureWebSocket),
 				"-w",
-				"-i",
-				importPath,
-				"-p",
-				protoFile,
+				"-r",
 				"-d",
 				`{"msg":"web unary"}`,
 			},
-			want: []map[string]any{{"msg": "web unary"}},
+			want: map[string]any{"msg": "web unary"},
 		},
 		{
-			name: "web client streaming request",
+			name: "web tls request with config",
 			args: []string{
-				"echo.EchoService.ClientStream",
-				"--config",
-				webTLSConfigFileName,
-				"-H",
-				"test=321",
-				"-d",
-				`{"msg":"1"}{"msg":"3"}{"msg":"2"}`,
-			},
-			want: []map[string]any{{"msgs": []any{"1", "3", "2", "321"}}},
-		},
-		{
-			name: "web server streaming request",
-			args: []string{
-				"echo.EchoService.ServerStream",
+				"echo.EchoService.Echo",
 				"--config",
 				webTLSConfigFileName,
 				"-d",
-				`{"msgs":["1", "3", "2"]}`,
-				"-H",
-				"test=321",
+				`{"msg":"web tls config"}`,
 			},
-			want: []map[string]any{{"msg": "1"}, {"msg": "3"}, {"msg": "2"}, {"msg": "321"}},
-		},
-		{
-			name: "web bidi streaming request",
-			args: []string{
-				"echo.EchoService.BidiStream",
-				"--config",
-				webTLSConfigFileName,
-				"-d",
-				`{"msg":"1"}{"msg":"3"}{"msg":"2"}`,
-				"-H",
-				"test=321",
-			},
-			want: []map[string]any{{"msg": "1"}, {"msg": "3"}, {"msg": "2"}, {"msg": "321"}},
+			want: map[string]any{"msg": "web tls config"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b, err := runCall(fs, tt.in, tt.args...)
+			b, err := runRequest(fs, tt.in, tt.args...)
+			require.NoErrorf(t, err, "command failed with output: %s", string(b))
+
+			got := map[string]any{}
+			require.NoError(t, json.Unmarshal(b, &got))
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestRequest_MultipleMessages(t *testing.T) {
+	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
+
+	tests := []struct {
+		name string
+		args []string
+		want []map[string]any
+	}{
+		{
+			name: "client streaming request format",
+			args: []string{
+				"echo.EchoService.ClientStream",
+				"-r",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"msg":"1"}{"msg":"3"}{"msg":"2"}`,
+			},
+			want: []map[string]any{{"msg": "1"}, {"msg": "3"}, {"msg": "2"}},
+		},
+		{
+			name: "bidi streaming request format",
+			args: []string{
+				"echo.EchoService.BidiStream",
+				"-r",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"msg":"1"}{"msg":"3"}{"msg":"2"}`,
+			},
+			want: []map[string]any{{"msg": "1"}, {"msg": "3"}, {"msg": "2"}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := runRequest(fs, nil, tt.args...)
 			require.NoErrorf(t, err, "command failed with output: %s", string(b))
 
 			got := []map[string]any{}
@@ -489,13 +416,129 @@ func TestCall(t *testing.T) {
 	}
 }
 
-func TestCall_Types(t *testing.T) {
+func TestRequest_OutputToFile(t *testing.T) {
+	const outputFileName = "output.json"
+
 	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
 
-	typesConfigFileName, err := createTempFile(fs, "types_config.yaml", `
+	b, err := runRequest(
+		fs,
+		nil,
+		"echo.EchoService.Echo",
+		"-a",
+		address(insecureSocket),
+		"-d",
+		`{"msg":"output to file"}`,
+		"-r",
+		"-o",
+		outputFileName,
+	)
+	require.NoErrorf(t, err, "command failed with output: %s", string(b))
+
+	got := map[string]any{}
+	file, err := fs.Open(outputFileName)
+	require.NoError(t, err, "failed to open output file")
+
+	defer file.Close()
+
+	require.NoError(t, json.NewDecoder(file).Decode(&got))
+	require.Equal(t, map[string]any{"msg": "output to file"}, got)
+}
+
+func TestRequest_ErrorCases(t *testing.T) {
+	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
+
+	tests := []struct {
+		name    string
+		args    []string
+		wantErr string
+	}{
+		{
+			name: "invalid method name",
+			args: []string{
+				"echo.NonExistentService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"msg":"test"}`,
+				"-r",
+			},
+			wantErr: "Symbol not found: echo.NonExistentService.Echo",
+		},
+		{
+			name: "missing reflection and proto files",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"msg":"test"}`,
+			},
+			wantErr: "at least 1 proto file must be specified, imported all files or reflection used",
+		},
+		{
+			name: "connection refused",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				"localhost:59999",
+				"-r",
+				"-d",
+				`{"msg":"test"}`,
+			},
+			wantErr: "connection refused",
+		},
+		{
+			name: "invalid json in data flag",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{invalid json}`,
+				"-r",
+			},
+			wantErr: "invalid character 'i' looking for beginning of object key string",
+		},
+		{
+			name: "file not found",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				"@/nonexistent/file.json",
+				"-r",
+			},
+			wantErr: "file does not exist",
+		},
+		{
+			name: "unknown method without package and service flags",
+			args: []string{
+				"UnknownMethod",
+				"-a",
+				address(insecureSocket),
+				"-r",
+			},
+			wantErr: "Symbol not found: ..UnknownMethod",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := runRequest(fs, nil, tt.args...)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tt.wantErr)
+		})
+	}
+}
+
+func TestRequest_Types(t *testing.T) {
+	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
+
+	typesReflectionConfigFileName, err := createTempFile(fs, "types_reflect.yaml", `
         address: `+address(insecureSocket)+`
         reflection: true`)
-	require.NoError(t, err, "failed to create types config file")
+	require.NoError(t, err, "failed to create types reflection config file")
 
 	tests := []struct {
 		name string
@@ -507,7 +550,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.ScalarTypes",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{` +
 					`"doubleField":1.79769313486231570814527423731704356798070e+308,` +
@@ -550,7 +593,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.ScalarTypes",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{` +
 					`"doubleField":0,` +
@@ -593,7 +636,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.ScalarTypes",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{` +
 					`"doubleField":-1.7976931348623157e+308,` +
@@ -629,7 +672,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.ScalarTypes",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{"doubleField":"NaN","floatField":"Infinity"}`,
 			},
@@ -656,7 +699,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.EnumTypes",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{"status":"PENDING","priority":"HIGH"}`,
 			},
@@ -667,7 +710,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.EnumTypes",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{"status":2,"priority":3}`,
 			},
@@ -678,7 +721,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.EnumTypes",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{}`,
 			},
@@ -689,7 +732,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Maps",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{` +
 					`"stringToInt":{"key1":100,"key2":200},` +
@@ -712,7 +755,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Maps",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{}`,
 			},
@@ -728,7 +771,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Oneof",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{"text":"hello world"}`,
 			},
@@ -739,7 +782,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Oneof",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{"number":42}`,
 			},
@@ -750,7 +793,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Oneof",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{"flag":true}`,
 			},
@@ -761,7 +804,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Oneof",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{"inner":{"id":99}}`,
 			},
@@ -774,7 +817,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Imported",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{"imported":{"id":"imported-id"}}`,
 			},
@@ -787,7 +830,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Recursive",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{"node":{"value":"level0","child":{"value":"level1","child":{"value":"level2"},"children":[{"value":"child1"},{"value":"child2"}]}}}`,
 			},
@@ -815,7 +858,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Optional",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{` +
 					`"optionalString":"test",` +
@@ -838,7 +881,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Optional",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{}`,
 			},
@@ -849,7 +892,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Optional",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{"optionalString":"only string","optionalInt32":100}`,
 			},
@@ -863,7 +906,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Repeated",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{` +
 					`"strings":["a","b","c"],` +
@@ -893,7 +936,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Repeated",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{"strings":[],"integers":[],"doubles":[],"bools":[],"statuses":[],"innerItems":[],"bytesList":[]}`,
 			},
@@ -912,7 +955,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Repeated",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{}`,
 			},
@@ -931,7 +974,7 @@ func TestCall_Types(t *testing.T) {
 			args: []string{
 				"types.TypesService.Repeated",
 				"--config",
-				typesConfigFileName,
+				typesReflectionConfigFileName,
 				"-d",
 				`{` +
 					`"strings":["single"],` +
@@ -958,7 +1001,7 @@ func TestCall_Types(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b, err := runCall(fs, nil, tt.args...)
+			b, err := runRequest(fs, nil, tt.args...)
 			require.NoErrorf(t, err, "command failed with output: %s", string(b))
 
 			got := map[string]any{}
@@ -968,6 +1011,6 @@ func TestCall_Types(t *testing.T) {
 	}
 }
 
-func runCall(fs afero.Fs, in io.Reader, args ...string) ([]byte, error) {
-	return run(fs, in, nil, append([]string{"call"}, args...)...)
+func runRequest(fs afero.Fs, in io.Reader, args ...string) ([]byte, error) {
+	return run(fs, in, nil, append([]string{"request"}, args...)...)
 }

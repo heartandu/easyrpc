@@ -7,6 +7,7 @@
 package testdata
 
 import (
+	common "github.com/heartandu/easyrpc/internal/testdata/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -340,11 +341,11 @@ func (x *EnumTypes) GetPriority() Priority {
 
 // Maps
 type Maps struct {
-	state           protoimpl.MessageState  `protogen:"open.v1"`
-	StringToInt     map[string]int32        `protobuf:"bytes,1,rep,name=string_to_int,json=stringToInt,proto3" json:"string_to_int,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	IntToString     map[int64]string        `protobuf:"bytes,2,rep,name=int_to_string,json=intToString,proto3" json:"int_to_string,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	StringToMessage map[string]*NestedInner `protobuf:"bytes,3,rep,name=string_to_message,json=stringToMessage,proto3" json:"string_to_message,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	BoolToFloat     map[bool]float32        `protobuf:"bytes,4,rep,name=bool_to_float,json=boolToFloat,proto3" json:"bool_to_float,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"fixed32,2,opt,name=value"`
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	StringToInt     map[string]int32       `protobuf:"bytes,1,rep,name=string_to_int,json=stringToInt,proto3" json:"string_to_int,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	IntToString     map[int64]string       `protobuf:"bytes,2,rep,name=int_to_string,json=intToString,proto3" json:"int_to_string,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	StringToMessage map[string]*Maps_Inner `protobuf:"bytes,3,rep,name=string_to_message,json=stringToMessage,proto3" json:"string_to_message,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	BoolToFloat     map[bool]float32       `protobuf:"bytes,4,rep,name=bool_to_float,json=boolToFloat,proto3" json:"bool_to_float,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"fixed32,2,opt,name=value"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -393,7 +394,7 @@ func (x *Maps) GetIntToString() map[int64]string {
 	return nil
 }
 
-func (x *Maps) GetStringToMessage() map[string]*NestedInner {
+func (x *Maps) GetStringToMessage() map[string]*Maps_Inner {
 	if x != nil {
 		return x.StringToMessage
 	}
@@ -415,7 +416,7 @@ type Oneof struct {
 	//	*Oneof_Text
 	//	*Oneof_Number
 	//	*Oneof_Flag
-	//	*Oneof_Nested
+	//	*Oneof_Inner_
 	Choice        isOneof_Choice `protobuf_oneof:"choice"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -485,10 +486,10 @@ func (x *Oneof) GetFlag() bool {
 	return false
 }
 
-func (x *Oneof) GetNested() *NestedInner {
+func (x *Oneof) GetInner() *Oneof_Inner {
 	if x != nil {
-		if x, ok := x.Choice.(*Oneof_Nested); ok {
-			return x.Nested
+		if x, ok := x.Choice.(*Oneof_Inner_); ok {
+			return x.Inner
 		}
 	}
 	return nil
@@ -510,8 +511,8 @@ type Oneof_Flag struct {
 	Flag bool `protobuf:"varint,3,opt,name=flag,proto3,oneof"`
 }
 
-type Oneof_Nested struct {
-	Nested *NestedInner `protobuf:"bytes,4,opt,name=nested,proto3,oneof"`
+type Oneof_Inner_ struct {
+	Inner *Oneof_Inner `protobuf:"bytes,4,opt,name=inner,proto3,oneof"`
 }
 
 func (*Oneof_Text) isOneof_Choice() {}
@@ -520,30 +521,30 @@ func (*Oneof_Number) isOneof_Choice() {}
 
 func (*Oneof_Flag) isOneof_Choice() {}
 
-func (*Oneof_Nested) isOneof_Choice() {}
+func (*Oneof_Inner_) isOneof_Choice() {}
 
 // Nested messages - uses common types
-type Nested struct {
+type Imported struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Outer         *NestedOuter           `protobuf:"bytes,1,opt,name=outer,proto3" json:"outer,omitempty"`
+	Imported      *common.Imported       `protobuf:"bytes,1,opt,name=imported,proto3" json:"imported,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Nested) Reset() {
-	*x = Nested{}
+func (x *Imported) Reset() {
+	*x = Imported{}
 	mi := &file_types_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Nested) String() string {
+func (x *Imported) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Nested) ProtoMessage() {}
+func (*Imported) ProtoMessage() {}
 
-func (x *Nested) ProtoReflect() protoreflect.Message {
+func (x *Imported) ProtoReflect() protoreflect.Message {
 	mi := &file_types_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -555,19 +556,79 @@ func (x *Nested) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Nested.ProtoReflect.Descriptor instead.
-func (*Nested) Descriptor() ([]byte, []int) {
+// Deprecated: Use Imported.ProtoReflect.Descriptor instead.
+func (*Imported) Descriptor() ([]byte, []int) {
 	return file_types_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *Nested) GetOuter() *NestedOuter {
+func (x *Imported) GetImported() *common.Imported {
 	if x != nil {
-		return x.Outer
+		return x.Imported
 	}
 	return nil
 }
 
 // Recursive messages - uses common types
+type RecursiveNode struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	Child         *RecursiveNode         `protobuf:"bytes,2,opt,name=child,proto3" json:"child,omitempty"`
+	Children      []*RecursiveNode       `protobuf:"bytes,3,rep,name=children,proto3" json:"children,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecursiveNode) Reset() {
+	*x = RecursiveNode{}
+	mi := &file_types_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecursiveNode) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecursiveNode) ProtoMessage() {}
+
+func (x *RecursiveNode) ProtoReflect() protoreflect.Message {
+	mi := &file_types_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecursiveNode.ProtoReflect.Descriptor instead.
+func (*RecursiveNode) Descriptor() ([]byte, []int) {
+	return file_types_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *RecursiveNode) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *RecursiveNode) GetChild() *RecursiveNode {
+	if x != nil {
+		return x.Child
+	}
+	return nil
+}
+
+func (x *RecursiveNode) GetChildren() []*RecursiveNode {
+	if x != nil {
+		return x.Children
+	}
+	return nil
+}
+
 type Recursive struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Node          *RecursiveNode         `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
@@ -577,7 +638,7 @@ type Recursive struct {
 
 func (x *Recursive) Reset() {
 	*x = Recursive{}
-	mi := &file_types_proto_msgTypes[5]
+	mi := &file_types_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -589,7 +650,7 @@ func (x *Recursive) String() string {
 func (*Recursive) ProtoMessage() {}
 
 func (x *Recursive) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[5]
+	mi := &file_types_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -602,7 +663,7 @@ func (x *Recursive) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Recursive.ProtoReflect.Descriptor instead.
 func (*Recursive) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{5}
+	return file_types_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Recursive) GetNode() *RecursiveNode {
@@ -618,7 +679,7 @@ type Optional struct {
 	OptionalString *string                `protobuf:"bytes,1,opt,name=optional_string,json=optionalString,proto3,oneof" json:"optional_string,omitempty"`
 	OptionalInt32  *int32                 `protobuf:"varint,2,opt,name=optional_int32,json=optionalInt32,proto3,oneof" json:"optional_int32,omitempty"`
 	OptionalBool   *bool                  `protobuf:"varint,3,opt,name=optional_bool,json=optionalBool,proto3,oneof" json:"optional_bool,omitempty"`
-	OptionalNested *NestedInner           `protobuf:"bytes,4,opt,name=optional_nested,json=optionalNested,proto3,oneof" json:"optional_nested,omitempty"`
+	OptionalInner  *Optional_Inner        `protobuf:"bytes,4,opt,name=optional_inner,json=optionalInner,proto3,oneof" json:"optional_inner,omitempty"`
 	OptionalEnum   *Status                `protobuf:"varint,5,opt,name=optional_enum,json=optionalEnum,proto3,enum=types.Status,oneof" json:"optional_enum,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -626,7 +687,7 @@ type Optional struct {
 
 func (x *Optional) Reset() {
 	*x = Optional{}
-	mi := &file_types_proto_msgTypes[6]
+	mi := &file_types_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -638,7 +699,7 @@ func (x *Optional) String() string {
 func (*Optional) ProtoMessage() {}
 
 func (x *Optional) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[6]
+	mi := &file_types_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -651,7 +712,7 @@ func (x *Optional) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Optional.ProtoReflect.Descriptor instead.
 func (*Optional) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{6}
+	return file_types_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Optional) GetOptionalString() string {
@@ -675,9 +736,9 @@ func (x *Optional) GetOptionalBool() bool {
 	return false
 }
 
-func (x *Optional) GetOptionalNested() *NestedInner {
+func (x *Optional) GetOptionalInner() *Optional_Inner {
 	if x != nil {
-		return x.OptionalNested
+		return x.OptionalInner
 	}
 	return nil
 }
@@ -697,7 +758,7 @@ type Repeated struct {
 	Doubles       []float64              `protobuf:"fixed64,3,rep,packed,name=doubles,proto3" json:"doubles,omitempty"`
 	Bools         []bool                 `protobuf:"varint,4,rep,packed,name=bools,proto3" json:"bools,omitempty"`
 	Statuses      []Status               `protobuf:"varint,5,rep,packed,name=statuses,proto3,enum=types.Status" json:"statuses,omitempty"`
-	NestedItems   []*NestedInner         `protobuf:"bytes,6,rep,name=nested_items,json=nestedItems,proto3" json:"nested_items,omitempty"`
+	InnerItems    []*Repeated_Inner      `protobuf:"bytes,6,rep,name=inner_items,json=innerItems,proto3" json:"inner_items,omitempty"`
 	BytesList     [][]byte               `protobuf:"bytes,7,rep,name=bytes_list,json=bytesList,proto3" json:"bytes_list,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -705,7 +766,7 @@ type Repeated struct {
 
 func (x *Repeated) Reset() {
 	*x = Repeated{}
-	mi := &file_types_proto_msgTypes[7]
+	mi := &file_types_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -717,7 +778,7 @@ func (x *Repeated) String() string {
 func (*Repeated) ProtoMessage() {}
 
 func (x *Repeated) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[7]
+	mi := &file_types_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -730,7 +791,7 @@ func (x *Repeated) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Repeated.ProtoReflect.Descriptor instead.
 func (*Repeated) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{7}
+	return file_types_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Repeated) GetStrings() []string {
@@ -768,9 +829,9 @@ func (x *Repeated) GetStatuses() []Status {
 	return nil
 }
 
-func (x *Repeated) GetNestedItems() []*NestedInner {
+func (x *Repeated) GetInnerItems() []*Repeated_Inner {
 	if x != nil {
-		return x.NestedItems
+		return x.InnerItems
 	}
 	return nil
 }
@@ -782,11 +843,187 @@ func (x *Repeated) GetBytesList() [][]byte {
 	return nil
 }
 
+type Maps_Inner struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Maps_Inner) Reset() {
+	*x = Maps_Inner{}
+	mi := &file_types_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Maps_Inner) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Maps_Inner) ProtoMessage() {}
+
+func (x *Maps_Inner) ProtoReflect() protoreflect.Message {
+	mi := &file_types_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Maps_Inner.ProtoReflect.Descriptor instead.
+func (*Maps_Inner) Descriptor() ([]byte, []int) {
+	return file_types_proto_rawDescGZIP(), []int{2, 0}
+}
+
+func (x *Maps_Inner) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type Oneof_Inner struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Oneof_Inner) Reset() {
+	*x = Oneof_Inner{}
+	mi := &file_types_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Oneof_Inner) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Oneof_Inner) ProtoMessage() {}
+
+func (x *Oneof_Inner) ProtoReflect() protoreflect.Message {
+	mi := &file_types_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Oneof_Inner.ProtoReflect.Descriptor instead.
+func (*Oneof_Inner) Descriptor() ([]byte, []int) {
+	return file_types_proto_rawDescGZIP(), []int{3, 0}
+}
+
+func (x *Oneof_Inner) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type Optional_Inner struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Optional_Inner) Reset() {
+	*x = Optional_Inner{}
+	mi := &file_types_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Optional_Inner) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Optional_Inner) ProtoMessage() {}
+
+func (x *Optional_Inner) ProtoReflect() protoreflect.Message {
+	mi := &file_types_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Optional_Inner.ProtoReflect.Descriptor instead.
+func (*Optional_Inner) Descriptor() ([]byte, []int) {
+	return file_types_proto_rawDescGZIP(), []int{7, 0}
+}
+
+func (x *Optional_Inner) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type Repeated_Inner struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Repeated_Inner) Reset() {
+	*x = Repeated_Inner{}
+	mi := &file_types_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Repeated_Inner) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Repeated_Inner) ProtoMessage() {}
+
+func (x *Repeated_Inner) ProtoReflect() protoreflect.Message {
+	mi := &file_types_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Repeated_Inner.ProtoReflect.Descriptor instead.
+func (*Repeated_Inner) Descriptor() ([]byte, []int) {
+	return file_types_proto_rawDescGZIP(), []int{8, 0}
+}
+
+func (x *Repeated_Inner) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
 var File_types_proto protoreflect.FileDescriptor
 
 const file_types_proto_rawDesc = "" +
 	"\n" +
-	"\vtypes.proto\x12\x05types\x1a\fcommon.proto\"\x9a\x04\n" +
+	"\vtypes.proto\x12\x05types\x1a\x13common/common.proto\"\x9a\x04\n" +
 	"\vScalarTypes\x12!\n" +
 	"\fdouble_field\x18\x01 \x01(\x01R\vdoubleField\x12\x1f\n" +
 	"\vfloat_field\x18\x02 \x01(\x02R\n" +
@@ -811,54 +1048,67 @@ const file_types_proto_rawDesc = "" +
 	"bytesField\"_\n" +
 	"\tEnumTypes\x12%\n" +
 	"\x06status\x18\x01 \x01(\x0e2\r.types.StatusR\x06status\x12+\n" +
-	"\bpriority\x18\x02 \x01(\x0e2\x0f.types.PriorityR\bpriority\"\xb3\x04\n" +
+	"\bpriority\x18\x02 \x01(\x0e2\x0f.types.PriorityR\bpriority\"\xca\x04\n" +
 	"\x04Maps\x12@\n" +
 	"\rstring_to_int\x18\x01 \x03(\v2\x1c.types.Maps.StringToIntEntryR\vstringToInt\x12@\n" +
 	"\rint_to_string\x18\x02 \x03(\v2\x1c.types.Maps.IntToStringEntryR\vintToString\x12L\n" +
 	"\x11string_to_message\x18\x03 \x03(\v2 .types.Maps.StringToMessageEntryR\x0fstringToMessage\x12@\n" +
-	"\rbool_to_float\x18\x04 \x03(\v2\x1c.types.Maps.BoolToFloatEntryR\vboolToFloat\x1a>\n" +
+	"\rbool_to_float\x18\x04 \x03(\v2\x1c.types.Maps.BoolToFloatEntryR\vboolToFloat\x1a\x17\n" +
+	"\x05Inner\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x1a>\n" +
 	"\x10StringToIntEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1a>\n" +
 	"\x10IntToStringEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x03R\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aW\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aU\n" +
 	"\x14StringToMessageEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12)\n" +
-	"\x05value\x18\x02 \x01(\v2\x13.common.NestedInnerR\x05value:\x028\x01\x1a>\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12'\n" +
+	"\x05value\x18\x02 \x01(\v2\x11.types.Maps.InnerR\x05value:\x028\x01\x1a>\n" +
 	"\x10BoolToFloatEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\bR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x02R\x05value:\x028\x01\"\x86\x01\n" +
+	"\x05value\x18\x02 \x01(\x02R\x05value:\x028\x01\"\x9c\x01\n" +
 	"\x05Oneof\x12\x14\n" +
 	"\x04text\x18\x01 \x01(\tH\x00R\x04text\x12\x18\n" +
 	"\x06number\x18\x02 \x01(\x05H\x00R\x06number\x12\x14\n" +
-	"\x04flag\x18\x03 \x01(\bH\x00R\x04flag\x12-\n" +
-	"\x06nested\x18\x04 \x01(\v2\x13.common.NestedInnerH\x00R\x06nestedB\b\n" +
-	"\x06choice\"3\n" +
-	"\x06Nested\x12)\n" +
-	"\x05outer\x18\x01 \x01(\v2\x13.common.NestedOuterR\x05outer\"6\n" +
-	"\tRecursive\x12)\n" +
-	"\x04node\x18\x01 \x01(\v2\x15.common.RecursiveNodeR\x04node\"\xe9\x02\n" +
+	"\x04flag\x18\x03 \x01(\bH\x00R\x04flag\x12*\n" +
+	"\x05inner\x18\x04 \x01(\v2\x12.types.Oneof.InnerH\x00R\x05inner\x1a\x17\n" +
+	"\x05Inner\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02idB\b\n" +
+	"\x06choice\">\n" +
+	"\bImported\x122\n" +
+	"\bimported\x18\x01 \x01(\v2\x16.types.common.ImportedR\bimported\"\x83\x01\n" +
+	"\rRecursiveNode\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value\x12*\n" +
+	"\x05child\x18\x02 \x01(\v2\x14.types.RecursiveNodeR\x05child\x120\n" +
+	"\bchildren\x18\x03 \x03(\v2\x14.types.RecursiveNodeR\bchildren\"5\n" +
+	"\tRecursive\x12(\n" +
+	"\x04node\x18\x01 \x01(\v2\x14.types.RecursiveNodeR\x04node\"\x81\x03\n" +
 	"\bOptional\x12,\n" +
 	"\x0foptional_string\x18\x01 \x01(\tH\x00R\x0eoptionalString\x88\x01\x01\x12*\n" +
 	"\x0eoptional_int32\x18\x02 \x01(\x05H\x01R\roptionalInt32\x88\x01\x01\x12(\n" +
 	"\roptional_bool\x18\x03 \x01(\bH\x02R\foptionalBool\x88\x01\x01\x12A\n" +
-	"\x0foptional_nested\x18\x04 \x01(\v2\x13.common.NestedInnerH\x03R\x0eoptionalNested\x88\x01\x01\x127\n" +
-	"\roptional_enum\x18\x05 \x01(\x0e2\r.types.StatusH\x04R\foptionalEnum\x88\x01\x01B\x12\n" +
+	"\x0eoptional_inner\x18\x04 \x01(\v2\x15.types.Optional.InnerH\x03R\roptionalInner\x88\x01\x01\x127\n" +
+	"\roptional_enum\x18\x05 \x01(\x0e2\r.types.StatusH\x04R\foptionalEnum\x88\x01\x01\x1a\x17\n" +
+	"\x05Inner\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02idB\x12\n" +
 	"\x10_optional_stringB\x11\n" +
 	"\x0f_optional_int32B\x10\n" +
-	"\x0e_optional_boolB\x12\n" +
-	"\x10_optional_nestedB\x10\n" +
-	"\x0e_optional_enum\"\xf2\x01\n" +
+	"\x0e_optional_boolB\x11\n" +
+	"\x0f_optional_innerB\x10\n" +
+	"\x0e_optional_enum\"\x8b\x02\n" +
 	"\bRepeated\x12\x18\n" +
 	"\astrings\x18\x01 \x03(\tR\astrings\x12\x1a\n" +
 	"\bintegers\x18\x02 \x03(\x03R\bintegers\x12\x18\n" +
 	"\adoubles\x18\x03 \x03(\x01R\adoubles\x12\x14\n" +
 	"\x05bools\x18\x04 \x03(\bR\x05bools\x12)\n" +
 	"\bstatuses\x18\x05 \x03(\x0e2\r.types.StatusR\bstatuses\x126\n" +
-	"\fnested_items\x18\x06 \x03(\v2\x13.common.NestedInnerR\vnestedItems\x12\x1d\n" +
+	"\vinner_items\x18\x06 \x03(\v2\x15.types.Repeated.InnerR\n" +
+	"innerItems\x12\x1d\n" +
 	"\n" +
-	"bytes_list\x18\a \x03(\fR\tbytesList*J\n" +
+	"bytes_list\x18\a \x03(\fR\tbytesList\x1a\x17\n" +
+	"\x05Inner\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id*J\n" +
 	"\x06Status\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aPENDING\x10\x01\x12\v\n" +
@@ -871,17 +1121,16 @@ const file_types_proto_rawDesc = "" +
 	"\n" +
 	"\x06MEDIUM\x10\x01\x12\b\n" +
 	"\x04HIGH\x10\x02\x12\f\n" +
-	"\bCRITICAL\x10\x032\xf2\x02\n" +
+	"\bCRITICAL\x10\x032\xf8\x02\n" +
 	"\fTypesService\x125\n" +
 	"\vScalarTypes\x12\x12.types.ScalarTypes\x1a\x12.types.ScalarTypes\x12/\n" +
 	"\tEnumTypes\x12\x10.types.EnumTypes\x1a\x10.types.EnumTypes\x12 \n" +
 	"\x04Maps\x12\v.types.Maps\x1a\v.types.Maps\x12#\n" +
-	"\x05Oneof\x12\f.types.Oneof\x1a\f.types.Oneof\x12&\n" +
-	"\x06Nested\x12\r.types.Nested\x1a\r.types.Nested\x12/\n" +
+	"\x05Oneof\x12\f.types.Oneof\x1a\f.types.Oneof\x12,\n" +
+	"\bImported\x12\x0f.types.Imported\x1a\x0f.types.Imported\x12/\n" +
 	"\tRecursive\x12\x10.types.Recursive\x1a\x10.types.Recursive\x12,\n" +
 	"\bOptional\x12\x0f.types.Optional\x1a\x0f.types.Optional\x12,\n" +
-	"\bRepeated\x12\x0f.types.Repeated\x1a\x0f.types.RepeatedB\fZ\n" +
-	"./testdatab\x06proto3"
+	"\bRepeated\x12\x0f.types.Repeated\x1a\x0f.types.RepeatedB0Z.github.com/heartandu/easyrpc/internal/testdatab\x06proto3"
 
 var (
 	file_types_proto_rawDescOnce sync.Once
@@ -896,62 +1145,67 @@ func file_types_proto_rawDescGZIP() []byte {
 }
 
 var file_types_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_types_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_types_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_types_proto_goTypes = []any{
-	(Status)(0),           // 0: types.Status
-	(Priority)(0),         // 1: types.Priority
-	(*ScalarTypes)(nil),   // 2: types.ScalarTypes
-	(*EnumTypes)(nil),     // 3: types.EnumTypes
-	(*Maps)(nil),          // 4: types.Maps
-	(*Oneof)(nil),         // 5: types.Oneof
-	(*Nested)(nil),        // 6: types.Nested
-	(*Recursive)(nil),     // 7: types.Recursive
-	(*Optional)(nil),      // 8: types.Optional
-	(*Repeated)(nil),      // 9: types.Repeated
-	nil,                   // 10: types.Maps.StringToIntEntry
-	nil,                   // 11: types.Maps.IntToStringEntry
-	nil,                   // 12: types.Maps.StringToMessageEntry
-	nil,                   // 13: types.Maps.BoolToFloatEntry
-	(*NestedInner)(nil),   // 14: common.NestedInner
-	(*NestedOuter)(nil),   // 15: common.NestedOuter
-	(*RecursiveNode)(nil), // 16: common.RecursiveNode
+	(Status)(0),             // 0: types.Status
+	(Priority)(0),           // 1: types.Priority
+	(*ScalarTypes)(nil),     // 2: types.ScalarTypes
+	(*EnumTypes)(nil),       // 3: types.EnumTypes
+	(*Maps)(nil),            // 4: types.Maps
+	(*Oneof)(nil),           // 5: types.Oneof
+	(*Imported)(nil),        // 6: types.Imported
+	(*RecursiveNode)(nil),   // 7: types.RecursiveNode
+	(*Recursive)(nil),       // 8: types.Recursive
+	(*Optional)(nil),        // 9: types.Optional
+	(*Repeated)(nil),        // 10: types.Repeated
+	(*Maps_Inner)(nil),      // 11: types.Maps.Inner
+	nil,                     // 12: types.Maps.StringToIntEntry
+	nil,                     // 13: types.Maps.IntToStringEntry
+	nil,                     // 14: types.Maps.StringToMessageEntry
+	nil,                     // 15: types.Maps.BoolToFloatEntry
+	(*Oneof_Inner)(nil),     // 16: types.Oneof.Inner
+	(*Optional_Inner)(nil),  // 17: types.Optional.Inner
+	(*Repeated_Inner)(nil),  // 18: types.Repeated.Inner
+	(*common.Imported)(nil), // 19: types.common.Imported
 }
 var file_types_proto_depIdxs = []int32{
 	0,  // 0: types.EnumTypes.status:type_name -> types.Status
 	1,  // 1: types.EnumTypes.priority:type_name -> types.Priority
-	10, // 2: types.Maps.string_to_int:type_name -> types.Maps.StringToIntEntry
-	11, // 3: types.Maps.int_to_string:type_name -> types.Maps.IntToStringEntry
-	12, // 4: types.Maps.string_to_message:type_name -> types.Maps.StringToMessageEntry
-	13, // 5: types.Maps.bool_to_float:type_name -> types.Maps.BoolToFloatEntry
-	14, // 6: types.Oneof.nested:type_name -> common.NestedInner
-	15, // 7: types.Nested.outer:type_name -> common.NestedOuter
-	16, // 8: types.Recursive.node:type_name -> common.RecursiveNode
-	14, // 9: types.Optional.optional_nested:type_name -> common.NestedInner
-	0,  // 10: types.Optional.optional_enum:type_name -> types.Status
-	0,  // 11: types.Repeated.statuses:type_name -> types.Status
-	14, // 12: types.Repeated.nested_items:type_name -> common.NestedInner
-	14, // 13: types.Maps.StringToMessageEntry.value:type_name -> common.NestedInner
-	2,  // 14: types.TypesService.ScalarTypes:input_type -> types.ScalarTypes
-	3,  // 15: types.TypesService.EnumTypes:input_type -> types.EnumTypes
-	4,  // 16: types.TypesService.Maps:input_type -> types.Maps
-	5,  // 17: types.TypesService.Oneof:input_type -> types.Oneof
-	6,  // 18: types.TypesService.Nested:input_type -> types.Nested
-	7,  // 19: types.TypesService.Recursive:input_type -> types.Recursive
-	8,  // 20: types.TypesService.Optional:input_type -> types.Optional
-	9,  // 21: types.TypesService.Repeated:input_type -> types.Repeated
-	2,  // 22: types.TypesService.ScalarTypes:output_type -> types.ScalarTypes
-	3,  // 23: types.TypesService.EnumTypes:output_type -> types.EnumTypes
-	4,  // 24: types.TypesService.Maps:output_type -> types.Maps
-	5,  // 25: types.TypesService.Oneof:output_type -> types.Oneof
-	6,  // 26: types.TypesService.Nested:output_type -> types.Nested
-	7,  // 27: types.TypesService.Recursive:output_type -> types.Recursive
-	8,  // 28: types.TypesService.Optional:output_type -> types.Optional
-	9,  // 29: types.TypesService.Repeated:output_type -> types.Repeated
-	22, // [22:30] is the sub-list for method output_type
-	14, // [14:22] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	12, // 2: types.Maps.string_to_int:type_name -> types.Maps.StringToIntEntry
+	13, // 3: types.Maps.int_to_string:type_name -> types.Maps.IntToStringEntry
+	14, // 4: types.Maps.string_to_message:type_name -> types.Maps.StringToMessageEntry
+	15, // 5: types.Maps.bool_to_float:type_name -> types.Maps.BoolToFloatEntry
+	16, // 6: types.Oneof.inner:type_name -> types.Oneof.Inner
+	19, // 7: types.Imported.imported:type_name -> types.common.Imported
+	7,  // 8: types.RecursiveNode.child:type_name -> types.RecursiveNode
+	7,  // 9: types.RecursiveNode.children:type_name -> types.RecursiveNode
+	7,  // 10: types.Recursive.node:type_name -> types.RecursiveNode
+	17, // 11: types.Optional.optional_inner:type_name -> types.Optional.Inner
+	0,  // 12: types.Optional.optional_enum:type_name -> types.Status
+	0,  // 13: types.Repeated.statuses:type_name -> types.Status
+	18, // 14: types.Repeated.inner_items:type_name -> types.Repeated.Inner
+	11, // 15: types.Maps.StringToMessageEntry.value:type_name -> types.Maps.Inner
+	2,  // 16: types.TypesService.ScalarTypes:input_type -> types.ScalarTypes
+	3,  // 17: types.TypesService.EnumTypes:input_type -> types.EnumTypes
+	4,  // 18: types.TypesService.Maps:input_type -> types.Maps
+	5,  // 19: types.TypesService.Oneof:input_type -> types.Oneof
+	6,  // 20: types.TypesService.Imported:input_type -> types.Imported
+	8,  // 21: types.TypesService.Recursive:input_type -> types.Recursive
+	9,  // 22: types.TypesService.Optional:input_type -> types.Optional
+	10, // 23: types.TypesService.Repeated:input_type -> types.Repeated
+	2,  // 24: types.TypesService.ScalarTypes:output_type -> types.ScalarTypes
+	3,  // 25: types.TypesService.EnumTypes:output_type -> types.EnumTypes
+	4,  // 26: types.TypesService.Maps:output_type -> types.Maps
+	5,  // 27: types.TypesService.Oneof:output_type -> types.Oneof
+	6,  // 28: types.TypesService.Imported:output_type -> types.Imported
+	8,  // 29: types.TypesService.Recursive:output_type -> types.Recursive
+	9,  // 30: types.TypesService.Optional:output_type -> types.Optional
+	10, // 31: types.TypesService.Repeated:output_type -> types.Repeated
+	24, // [24:32] is the sub-list for method output_type
+	16, // [16:24] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_types_proto_init() }
@@ -959,21 +1213,20 @@ func file_types_proto_init() {
 	if File_types_proto != nil {
 		return
 	}
-	file_common_proto_init()
 	file_types_proto_msgTypes[3].OneofWrappers = []any{
 		(*Oneof_Text)(nil),
 		(*Oneof_Number)(nil),
 		(*Oneof_Flag)(nil),
-		(*Oneof_Nested)(nil),
+		(*Oneof_Inner_)(nil),
 	}
-	file_types_proto_msgTypes[6].OneofWrappers = []any{}
+	file_types_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_types_proto_rawDesc), len(file_types_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   12,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
