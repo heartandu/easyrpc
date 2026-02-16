@@ -532,6 +532,485 @@ func TestRequest_ErrorCases(t *testing.T) {
 	}
 }
 
+func TestRequest_Types(t *testing.T) {
+	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
+
+	typesReflectionConfigFileName, err := createTempFile(fs, "types_reflect.yaml", `
+        address: `+address(insecureSocket)+`
+        reflection: true`)
+	require.NoError(t, err, "failed to create types reflection config file")
+
+	tests := []struct {
+		name string
+		args []string
+		want map[string]any
+	}{
+		{
+			name: "scalar types with edge values",
+			args: []string{
+				"types.TypesService.ScalarTypes",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{` +
+					`"doubleField":1.79769313486231570814527423731704356798070e+308,` +
+					`"floatField":3.40282346638528859811704183484516925440e+38,` +
+					`"int32Field":2147483647,` +
+					`"int64Field":9223372036854775807,` +
+					`"uint32Field":4294967295,` +
+					`"uint64Field":18446744073709551615,` +
+					`"sint32Field":2147483647,` +
+					`"sint64Field":9223372036854775807,` +
+					`"fixed32Field":4294967295,` +
+					`"fixed64Field":18446744073709551615,` +
+					`"sfixed32Field":2147483647,` +
+					`"sfixed64Field":9223372036854775807,` +
+					`"boolField":true,` +
+					`"stringField":"test string",` +
+					`"bytesField":"YmFzZTY0IGVuY29kZWQ="` +
+					`}`,
+			},
+			want: map[string]any{
+				"doubleField":   1.79769313486231570814527423731704356798070e+308,
+				"floatField":    3.4028235e+38,
+				"int32Field":    2147483647.0,
+				"int64Field":    "9223372036854775807",
+				"uint32Field":   4294967295.0,
+				"uint64Field":   "18446744073709551615",
+				"sint32Field":   2147483647.0,
+				"sint64Field":   "9223372036854775807",
+				"fixed32Field":  4294967295.0,
+				"fixed64Field":  "18446744073709551615",
+				"sfixed32Field": 2147483647.0,
+				"sfixed64Field": "9223372036854775807",
+				"boolField":     true,
+				"stringField":   "test string",
+				"bytesField":    "YmFzZTY0IGVuY29kZWQ=",
+			},
+		},
+		{
+			name: "scalar types with zero values",
+			args: []string{
+				"types.TypesService.ScalarTypes",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{` +
+					`"doubleField":0,` +
+					`"floatField":0,` +
+					`"int32Field":0,` +
+					`"int64Field":0,` +
+					`"uint32Field":0,` +
+					`"uint64Field":0,` +
+					`"sint32Field":0,` +
+					`"sint64Field":0,` +
+					`"fixed32Field":0,` +
+					`"fixed64Field":0,` +
+					`"sfixed32Field":0,` +
+					`"sfixed64Field":0,` +
+					`"boolField":false,` +
+					`"stringField":"",` +
+					`"bytesField":""` +
+					`}`,
+			},
+			want: map[string]any{
+				"doubleField":   0.0,
+				"floatField":    0.0,
+				"int32Field":    0.0,
+				"int64Field":    "0",
+				"uint32Field":   0.0,
+				"uint64Field":   "0",
+				"sint32Field":   0.0,
+				"sint64Field":   "0",
+				"fixed32Field":  0.0,
+				"fixed64Field":  "0",
+				"sfixed32Field": 0.0,
+				"sfixed64Field": "0",
+				"boolField":     false,
+				"stringField":   "",
+				"bytesField":    "",
+			},
+		},
+		{
+			name: "scalar types with negative values",
+			args: []string{
+				"types.TypesService.ScalarTypes",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{` +
+					`"doubleField":-1.7976931348623157e+308,` +
+					`"floatField":-3.4028235e+38,` +
+					`"int32Field":-2147483648,` +
+					`"int64Field":-9223372036854775808,` +
+					`"sint32Field":-2147483648,` +
+					`"sint64Field":-9223372036854775808,` +
+					`"sfixed32Field":-2147483648,` +
+					`"sfixed64Field":-9223372036854775808` +
+					`}`,
+			},
+			want: map[string]any{
+				"doubleField":   -1.7976931348623157e+308,
+				"floatField":    -3.4028235e+38,
+				"int32Field":    -2147483648.0,
+				"int64Field":    "-9223372036854775808",
+				"uint32Field":   0.0,
+				"uint64Field":   "0",
+				"sint32Field":   -2147483648.0,
+				"sint64Field":   "-9223372036854775808",
+				"fixed32Field":  0.0,
+				"fixed64Field":  "0",
+				"sfixed32Field": -2147483648.0,
+				"sfixed64Field": "-9223372036854775808",
+				"boolField":     false,
+				"stringField":   "",
+				"bytesField":    "",
+			},
+		},
+		{
+			name: "scalar types with special float values",
+			args: []string{
+				"types.TypesService.ScalarTypes",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{"doubleField":"NaN","floatField":"Infinity"}`,
+			},
+			want: map[string]any{
+				"doubleField":   "NaN",
+				"floatField":    "Infinity",
+				"int32Field":    0.0,
+				"int64Field":    "0",
+				"uint32Field":   0.0,
+				"uint64Field":   "0",
+				"sint32Field":   0.0,
+				"sint64Field":   "0",
+				"fixed32Field":  0.0,
+				"fixed64Field":  "0",
+				"sfixed32Field": 0.0,
+				"sfixed64Field": "0",
+				"boolField":     false,
+				"stringField":   "",
+				"bytesField":    "",
+			},
+		},
+		{
+			name: "enum types",
+			args: []string{
+				"types.TypesService.EnumTypes",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{"status":"PENDING","priority":"HIGH"}`,
+			},
+			want: map[string]any{"status": "PENDING", "priority": "HIGH"},
+		},
+		{
+			name: "enum types with numeric values",
+			args: []string{
+				"types.TypesService.EnumTypes",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{"status":2,"priority":3}`,
+			},
+			want: map[string]any{"status": "RUNNING", "priority": "CRITICAL"},
+		},
+		{
+			name: "enum types with default values",
+			args: []string{
+				"types.TypesService.EnumTypes",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{}`,
+			},
+			want: map[string]any{"status": "UNKNOWN", "priority": "LOW"},
+		},
+		{
+			name: "maps",
+			args: []string{
+				"types.TypesService.Maps",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{` +
+					`"stringToInt":{"key1":100,"key2":200},` +
+					`"intToString":{"123":"value1","456":"value2"},` +
+					`"stringToMessage":{"msg1":{"id":5}},` +
+					`"boolToFloat":{"true":3.14,"false":2.71}` +
+					`}`,
+			},
+			want: map[string]any{
+				"stringToInt": map[string]any{"key1": 100.0, "key2": 200.0},
+				"intToString": map[string]any{"123": "value1", "456": "value2"},
+				"stringToMessage": map[string]any{
+					"msg1": map[string]any{"id": "5"},
+				},
+				"boolToFloat": map[string]any{"true": 3.14, "false": 2.71},
+			},
+		},
+		{
+			name: "maps empty",
+			args: []string{
+				"types.TypesService.Maps",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{}`,
+			},
+			want: map[string]any{
+				"stringToInt":     map[string]any{},
+				"intToString":     map[string]any{},
+				"stringToMessage": map[string]any{},
+				"boolToFloat":     map[string]any{},
+			},
+		},
+		{
+			name: "oneof with string",
+			args: []string{
+				"types.TypesService.Oneof",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{"text":"hello world"}`,
+			},
+			want: map[string]any{"text": "hello world"},
+		},
+		{
+			name: "oneof with number",
+			args: []string{
+				"types.TypesService.Oneof",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{"number":42}`,
+			},
+			want: map[string]any{"number": 42.0},
+		},
+		{
+			name: "oneof with bool",
+			args: []string{
+				"types.TypesService.Oneof",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{"flag":true}`,
+			},
+			want: map[string]any{"flag": true},
+		},
+		{
+			name: "oneof with inner message",
+			args: []string{
+				"types.TypesService.Oneof",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{"inner":{"id":99}}`,
+			},
+			want: map[string]any{
+				"inner": map[string]any{"id": "99"},
+			},
+		},
+		{
+			name: "imported message",
+			args: []string{
+				"types.TypesService.Imported",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{"imported":{"id":"imported-id"}}`,
+			},
+			want: map[string]any{
+				"imported": map[string]any{"id": "imported-id"},
+			},
+		},
+		{
+			name: "recursive messages with 2 levels",
+			args: []string{
+				"types.TypesService.Recursive",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{"node":{"value":"level0","child":{"value":"level1","child":{"value":"level2"},"children":[{"value":"child1"},{"value":"child2"}]}}}`,
+			},
+			want: map[string]any{
+				"node": map[string]any{
+					"value": "level0",
+					"child": map[string]any{
+						"value": "level1",
+						"child": map[string]any{
+							"value":    "level2",
+							"child":    nil,
+							"children": []any{},
+						},
+						"children": []any{
+							map[string]any{"value": "child1", "child": nil, "children": []any{}},
+							map[string]any{"value": "child2", "child": nil, "children": []any{}},
+						},
+					},
+					"children": []any{},
+				},
+			},
+		},
+		{
+			name: "optional fields all set",
+			args: []string{
+				"types.TypesService.Optional",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{` +
+					`"optionalString":"test",` +
+					`"optionalInt32":42,` +
+					`"optionalBool":true,` +
+					`"optionalInner":{"id":5},` +
+					`"optionalEnum":"COMPLETED"` +
+					`}`,
+			},
+			want: map[string]any{
+				"optionalString": "test",
+				"optionalInt32":  42.0,
+				"optionalBool":   true,
+				"optionalInner":  map[string]any{"id": "5"},
+				"optionalEnum":   "COMPLETED",
+			},
+		},
+		{
+			name: "optional fields none set",
+			args: []string{
+				"types.TypesService.Optional",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{}`,
+			},
+			want: map[string]any{},
+		},
+		{
+			name: "optional fields partially set",
+			args: []string{
+				"types.TypesService.Optional",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{"optionalString":"only string","optionalInt32":100}`,
+			},
+			want: map[string]any{
+				"optionalString": "only string",
+				"optionalInt32":  100.0,
+			},
+		},
+		{
+			name: "repeated fields with values",
+			args: []string{
+				"types.TypesService.Repeated",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{` +
+					`"strings":["a","b","c"],` +
+					`"integers":[1,2,3],` +
+					`"doubles":[1.1,2.2,3.3],` +
+					`"bools":[true,false,true],` +
+					`"statuses":["PENDING","RUNNING","COMPLETED"],` +
+					`"innerItems":[{"id":10},{"id":20}],` +
+					`"bytesList":["aGVsbG8=","d29ybGQ="]` +
+					`}`,
+			},
+			want: map[string]any{
+				"strings":  []any{"a", "b", "c"},
+				"integers": []any{"1", "2", "3"},
+				"doubles":  []any{1.1, 2.2, 3.3},
+				"bools":    []any{true, false, true},
+				"statuses": []any{"PENDING", "RUNNING", "COMPLETED"},
+				"innerItems": []any{
+					map[string]any{"id": "10"},
+					map[string]any{"id": "20"},
+				},
+				"bytesList": []any{"aGVsbG8=", "d29ybGQ="},
+			},
+		},
+		{
+			name: "repeated fields empty",
+			args: []string{
+				"types.TypesService.Repeated",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{"strings":[],"integers":[],"doubles":[],"bools":[],"statuses":[],"innerItems":[],"bytesList":[]}`,
+			},
+			want: map[string]any{
+				"strings":    []any{},
+				"integers":   []any{},
+				"doubles":    []any{},
+				"bools":      []any{},
+				"statuses":   []any{},
+				"innerItems": []any{},
+				"bytesList":  []any{},
+			},
+		},
+		{
+			name: "repeated fields not set",
+			args: []string{
+				"types.TypesService.Repeated",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{}`,
+			},
+			want: map[string]any{
+				"strings":    []any{},
+				"integers":   []any{},
+				"doubles":    []any{},
+				"bools":      []any{},
+				"statuses":   []any{},
+				"innerItems": []any{},
+				"bytesList":  []any{},
+			},
+		},
+		{
+			name: "repeated fields single values",
+			args: []string{
+				"types.TypesService.Repeated",
+				"--config",
+				typesReflectionConfigFileName,
+				"-d",
+				`{` +
+					`"strings":["single"],` +
+					`"integers":[42],` +
+					`"doubles":[3.14],` +
+					`"bools":[false],` +
+					`"statuses":["FAILED"],` +
+					`"innerItems":[{"id":1}],` +
+					`"bytesList":["c2luZ2xl"]` +
+					`}`,
+			},
+			want: map[string]any{
+				"strings":  []any{"single"},
+				"integers": []any{"42"},
+				"doubles":  []any{3.14},
+				"bools":    []any{false},
+				"statuses": []any{"FAILED"},
+				"innerItems": []any{
+					map[string]any{"id": "1"},
+				},
+				"bytesList": []any{"c2luZ2xl"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := runRequest(fs, nil, tt.args...)
+			require.NoErrorf(t, err, "command failed with output: %s", string(b))
+
+			got := map[string]any{}
+			require.NoError(t, json.Unmarshal(b, &got))
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func runRequest(fs afero.Fs, in io.Reader, args ...string) ([]byte, error) {
 	return run(fs, in, nil, append([]string{"request"}, args...)...)
 }

@@ -493,6 +493,11 @@ func TestCall(t *testing.T) {
 func TestCall_Types(t *testing.T) {
 	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
 
+	typesConfigFileName, err := createTempFile(fs, "types_config.yaml", `
+        address: `+address(insecureSocket)+`
+        reflection: true`)
+	require.NoError(t, err, "failed to create types config file")
+
 	tests := []struct {
 		name string
 		args []string
@@ -502,8 +507,8 @@ func TestCall_Types(t *testing.T) {
 			name: "scalar types with edge values",
 			args: []string{
 				"types.TypesService.ScalarTypes",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{` +
 					`"doubleField":1.79769313486231570814527423731704356798070e+308,` +
@@ -522,7 +527,6 @@ func TestCall_Types(t *testing.T) {
 					`"stringField":"test string",` +
 					`"bytesField":"YmFzZTY0IGVuY29kZWQ="` +
 					`}`,
-				"-r",
 			},
 			want: map[string]any{
 				"doubleField":   1.79769313486231570814527423731704356798070e+308,
@@ -546,8 +550,8 @@ func TestCall_Types(t *testing.T) {
 			name: "scalar types with zero values",
 			args: []string{
 				"types.TypesService.ScalarTypes",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{` +
 					`"doubleField":0,` +
@@ -566,7 +570,6 @@ func TestCall_Types(t *testing.T) {
 					`"stringField":"",` +
 					`"bytesField":""` +
 					`}`,
-				"-r",
 			},
 			want: map[string]any{
 				"doubleField":   0.0,
@@ -590,8 +593,8 @@ func TestCall_Types(t *testing.T) {
 			name: "scalar types with negative values",
 			args: []string{
 				"types.TypesService.ScalarTypes",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{` +
 					`"doubleField":-1.7976931348623157e+308,` +
@@ -603,7 +606,6 @@ func TestCall_Types(t *testing.T) {
 					`"sfixed32Field":-2147483648,` +
 					`"sfixed64Field":-9223372036854775808` +
 					`}`,
-				"-r",
 			},
 			want: map[string]any{
 				"doubleField":   -1.7976931348623157e+308,
@@ -627,11 +629,10 @@ func TestCall_Types(t *testing.T) {
 			name: "scalar types with special float values",
 			args: []string{
 				"types.TypesService.ScalarTypes",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{"doubleField":"NaN","floatField":"Infinity"}`,
-				"-r",
 			},
 			want: map[string]any{
 				"doubleField":   "NaN",
@@ -655,11 +656,10 @@ func TestCall_Types(t *testing.T) {
 			name: "enum types",
 			args: []string{
 				"types.TypesService.EnumTypes",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{"status":"PENDING","priority":"HIGH"}`,
-				"-r",
 			},
 			want: map[string]any{"status": "PENDING", "priority": "HIGH"},
 		},
@@ -667,11 +667,10 @@ func TestCall_Types(t *testing.T) {
 			name: "enum types with numeric values",
 			args: []string{
 				"types.TypesService.EnumTypes",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{"status":2,"priority":3}`,
-				"-r",
 			},
 			want: map[string]any{"status": "RUNNING", "priority": "CRITICAL"},
 		},
@@ -679,20 +678,19 @@ func TestCall_Types(t *testing.T) {
 			name: "enum types with default values",
 			args: []string{
 				"types.TypesService.EnumTypes",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{}`,
-				"-r",
 			},
 			want: map[string]any{"status": "UNKNOWN", "priority": "LOW"},
 		},
 		{
-			name: "maps with primitive types",
+			name: "maps",
 			args: []string{
 				"types.TypesService.Maps",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{` +
 					`"stringToInt":{"key1":100,"key2":200},` +
@@ -700,7 +698,6 @@ func TestCall_Types(t *testing.T) {
 					`"stringToMessage":{"msg1":{"id":5}},` +
 					`"boolToFloat":{"true":3.14,"false":2.71}` +
 					`}`,
-				"-r",
 			},
 			want: map[string]any{
 				"stringToInt": map[string]any{"key1": 100.0, "key2": 200.0},
@@ -715,11 +712,10 @@ func TestCall_Types(t *testing.T) {
 			name: "maps empty",
 			args: []string{
 				"types.TypesService.Maps",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{}`,
-				"-r",
 			},
 			want: map[string]any{
 				"stringToInt":     map[string]any{},
@@ -732,11 +728,10 @@ func TestCall_Types(t *testing.T) {
 			name: "oneof with string",
 			args: []string{
 				"types.TypesService.Oneof",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{"text":"hello world"}`,
-				"-r",
 			},
 			want: map[string]any{"text": "hello world"},
 		},
@@ -744,11 +739,10 @@ func TestCall_Types(t *testing.T) {
 			name: "oneof with number",
 			args: []string{
 				"types.TypesService.Oneof",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{"number":42}`,
-				"-r",
 			},
 			want: map[string]any{"number": 42.0},
 		},
@@ -756,11 +750,10 @@ func TestCall_Types(t *testing.T) {
 			name: "oneof with bool",
 			args: []string{
 				"types.TypesService.Oneof",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{"flag":true}`,
-				"-r",
 			},
 			want: map[string]any{"flag": true},
 		},
@@ -768,11 +761,10 @@ func TestCall_Types(t *testing.T) {
 			name: "oneof with inner message",
 			args: []string{
 				"types.TypesService.Oneof",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{"inner":{"id":99}}`,
-				"-r",
 			},
 			want: map[string]any{
 				"inner": map[string]any{"id": "99"},
@@ -782,11 +774,10 @@ func TestCall_Types(t *testing.T) {
 			name: "imported message",
 			args: []string{
 				"types.TypesService.Imported",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{"imported":{"id":"imported-id"}}`,
-				"-r",
 			},
 			want: map[string]any{
 				"imported": map[string]any{"id": "imported-id"},
@@ -796,11 +787,10 @@ func TestCall_Types(t *testing.T) {
 			name: "recursive messages with 2 levels",
 			args: []string{
 				"types.TypesService.Recursive",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{"node":{"value":"level0","child":{"value":"level1","child":{"value":"level2"},"children":[{"value":"child1"},{"value":"child2"}]}}}`,
-				"-r",
 			},
 			want: map[string]any{
 				"node": map[string]any{
@@ -825,8 +815,8 @@ func TestCall_Types(t *testing.T) {
 			name: "optional fields all set",
 			args: []string{
 				"types.TypesService.Optional",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{` +
 					`"optionalString":"test",` +
@@ -835,7 +825,6 @@ func TestCall_Types(t *testing.T) {
 					`"optionalInner":{"id":5},` +
 					`"optionalEnum":"COMPLETED"` +
 					`}`,
-				"-r",
 			},
 			want: map[string]any{
 				"optionalString": "test",
@@ -849,11 +838,10 @@ func TestCall_Types(t *testing.T) {
 			name: "optional fields none set",
 			args: []string{
 				"types.TypesService.Optional",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{}`,
-				"-r",
 			},
 			want: map[string]any{},
 		},
@@ -861,11 +849,10 @@ func TestCall_Types(t *testing.T) {
 			name: "optional fields partially set",
 			args: []string{
 				"types.TypesService.Optional",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{"optionalString":"only string","optionalInt32":100}`,
-				"-r",
 			},
 			want: map[string]any{
 				"optionalString": "only string",
@@ -876,8 +863,8 @@ func TestCall_Types(t *testing.T) {
 			name: "repeated fields with values",
 			args: []string{
 				"types.TypesService.Repeated",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{` +
 					`"strings":["a","b","c"],` +
@@ -888,7 +875,6 @@ func TestCall_Types(t *testing.T) {
 					`"innerItems":[{"id":10},{"id":20}],` +
 					`"bytesList":["aGVsbG8=","d29ybGQ="]` +
 					`}`,
-				"-r",
 			},
 			want: map[string]any{
 				"strings":  []any{"a", "b", "c"},
@@ -907,11 +893,10 @@ func TestCall_Types(t *testing.T) {
 			name: "repeated fields empty",
 			args: []string{
 				"types.TypesService.Repeated",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{"strings":[],"integers":[],"doubles":[],"bools":[],"statuses":[],"innerItems":[],"bytesList":[]}`,
-				"-r",
 			},
 			want: map[string]any{
 				"strings":    []any{},
@@ -927,11 +912,10 @@ func TestCall_Types(t *testing.T) {
 			name: "repeated fields not set",
 			args: []string{
 				"types.TypesService.Repeated",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{}`,
-				"-r",
 			},
 			want: map[string]any{
 				"strings":    []any{},
@@ -947,8 +931,8 @@ func TestCall_Types(t *testing.T) {
 			name: "repeated fields single values",
 			args: []string{
 				"types.TypesService.Repeated",
-				"-a",
-				address(insecureSocket),
+				"--config",
+				typesConfigFileName,
 				"-d",
 				`{` +
 					`"strings":["single"],` +
@@ -959,7 +943,6 @@ func TestCall_Types(t *testing.T) {
 					`"innerItems":[{"id":1}],` +
 					`"bytesList":["c2luZ2xl"]` +
 					`}`,
-				"-r",
 			},
 			want: map[string]any{
 				"strings":  []any{"single"},
