@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCallAutocomplete(t *testing.T) {
+func TestMethodAutocomplete(t *testing.T) {
 	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
 
 	protoConf, err := createTempFile(fs, "proto-autocomp.yaml", `
@@ -37,7 +37,7 @@ func TestCallAutocomplete(t *testing.T) {
 		t.Fatalf("failed to create reflect config file: %v", err)
 	}
 
-	tests := []struct {
+	testCases := []struct {
 		name string
 		args []string
 		want []string
@@ -367,23 +367,30 @@ func TestCallAutocomplete(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			b, err := runCallAutocomplete(fs, tt.args...)
-			if err != nil {
-				t.Fatalf("command failed: output = %v, err = %v", string(b), err)
-			}
 
-			lines := strings.Split(strings.TrimSpace(string(b)), "\n")
-			if len(lines) < 2 {
-				t.Fatalf("autocomplete returned unknown response: %v", lines)
-			}
+	commands := []string{"call", "request"}
 
-			require.Equal(t, tt.want, lines[:len(lines)-2])
+	for _, cmd := range commands {
+		t.Run(cmd, func(t *testing.T) {
+			for _, tt := range testCases {
+				t.Run(tt.name, func(t *testing.T) {
+					b, err := runMethodAutocomplete(fs, cmd, tt.args...)
+					if err != nil {
+						t.Fatalf("command failed: output = %v, err = %v", string(b), err)
+					}
+
+					lines := strings.Split(strings.TrimSpace(string(b)), "\n")
+					if len(lines) < 2 {
+						t.Fatalf("autocomplete returned unknown response: %v", lines)
+					}
+
+					require.Equal(t, tt.want, lines[:len(lines)-2])
+				})
+			}
 		})
 	}
 }
 
-func runCallAutocomplete(fs afero.Fs, args ...string) ([]byte, error) {
-	return run(fs, nil, nil, append([]string{"__complete", "call"}, args...)...)
+func runMethodAutocomplete(fs afero.Fs, command string, args ...string) ([]byte, error) {
+	return run(fs, nil, nil, append([]string{"__complete", command}, args...)...)
 }
