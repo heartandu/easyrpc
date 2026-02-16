@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EasyRPC Configuration",
+  "description": "Configuration schema for EasyRPC",
+  "type": "object",
+  "properties": {
+    "import_paths": {
+      "type": "array",
+      "description": "List of import paths for proto files",
+      "items": {
+        "type": "string"
+      }
+    },
+    "import_all": {
+      "type": "boolean",
+      "description": "Whether to import all proto files from import paths"
+    },
+    "proto_files": {
+      "type": "array",
+      "description": "List of proto files to use",
+      "items": {
+        "type": "string"
+      }
+    },
+    "address": {
+      "type": "string",
+      "description": "Remote server address"
+    },
+    "reflection": {
+      "type": "boolean",
+      "description": "Enable gRPC reflection"
+    },
+    "web": {
+      "type": "boolean",
+      "description": "Use gRPC-Web protocol"
+    },
+    "tls": {
+      "type": "boolean",
+      "description": "Enable TLS"
+    },
+    "cacert": {
+      "type": "string",
+      "description": "Path to CA certificate file"
+    },
+    "cert": {
+      "type": "string",
+      "description": "Path to client certificate file"
+    },
+    "key": {
+      "type": "string",
+      "description": "Path to client key file"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Request metadata key-value pairs",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "package": {
+      "type": "string",
+      "description": "Default proto package"
+    },
+    "service": {
+      "type": "string",
+      "description": "Default service name"
+    },
+    "editor": {
+      "type": "string",
+      "description": "Command to launch message editor"
+    }
+  },
+  "additionalProperties": false
+}
