@@ -22,6 +22,8 @@ a more convenient tool for users.
   * [TLS](#tls)
   * [Metadata](#metadata)
   * [Input data](#input-data)
+  * [Request data preparation](#request-data-preparation)
+  * [Edit request before call/printout](#edit-request-before-call/printout)
   * [Autocompletion](#autocompletion)
   * [Configuration files](#configuration-files)
   * [gRPC-Web](#grpc-web)
@@ -58,7 +60,6 @@ or verify that the installed binary is accessible in one of the standard `PATH` 
 ### Register autocompletion
 
 To begin using it, you must register the autocompletions script for your preferred shell.
-Currently, the following shells are supported: `bash`, `fish`, `zsh`, and `powershell`.
 Please refer to the `easyrpc completion -h` command help to learn how to register completions for specific shells.
 
 ## Usage
@@ -171,10 +172,59 @@ There are also multiple ways of providing request message data.
 $ easyrpc c -a localhost:12345 -r example.package.Service.Method -d '{"msg":"hello"}'
 
 # Receiving the data from stdin
-$ echo '{"msg":"hello"}' | easyrpc -a localhost:12345 -r example.package.Service.Method -d -
+$ echo '{"msg":"hello"}' | easyrpc c -a localhost:12345 -r example.package.Service.Method -d -
 
 # Reading the data from file
 $ easyrpc c -a localhost:12345 -r example.package.Service.Method -d @~/some/path/request.json
+```
+
+### Request data preparation
+
+You can prepare a selected method request for future reuse. The request command must be supplied with at least one
+source of protobuf descriptors: either protobuf files or remote server with reflection enabled. If both are provided,
+reflection descriptors take precedence.
+
+```shell
+# Request command takes a request message from a specified method, and prints unpopulated fields (only on the top level)
+# to standard output
+$ easyrpc r -i path/to/proto -p example.proto example.package.Service.Method
+{
+  "id": 123,
+  "msg": "some message",
+  "nestedMessage": null
+}
+
+# Works with reflect, connection setup is the same as in call command (supports TLS and gRPC-Web)
+$ easyrpc r -a localhost:12345 -r example.package.Service.Method
+
+# Save output to a file (-o flag)
+$ easyrpc r -i path/to/proto -p example.proto -o request.json example.package.Service.Method
+```
+
+### Edit request before call/printout
+
+You can edit the request data before call or request printout. The editor can be set in the `EDITOR` environment
+variable or in the `editor: ""` [configuration file](#configuration-files) field. If no editor has been set, the system
+default will be used instead.
+
+```shell
+# Add -e (--edit) flag to open a temporary request file in an external editor. Requests edited contain $schema file link
+# with a temporary JSON Schema for selected method request message which allows JSON LSP to provide field autocompletion
+# and value validation.
+$ easyrpc c example.package.Service.Method -e
+
+# Pass an existing request and then edit that request before call.
+$ easyrpc c example.package.Service.Method -d request.json -e
+
+# Edit also works with request command which helps with request preparation for future reuse.
+$ easyrpc r example.package.Service.Method -d request.json -e -o modified_request.json
+
+# If you supply more than one message for a client streaming method, each message will be opened for editing in
+# sequence.
+$ easyrpc c example.package.Service.Method -d '{"msg":"test1"}{"msg":"test2"}{"msg":"test3"}' -e
+
+# It is possible to open an editor with pipes.
+$ easyrpc r example.package.Service.Method -e | jq
 ```
 
 ### Autocompletion

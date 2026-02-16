@@ -170,17 +170,17 @@ func (c *ProtoComp) symbols(
 
 	cc, err := client.New(c.fs, cfg)
 	if err != nil {
-		return nil, err //nolint:wrapcheck // Error wrapping is unnecessary in authocomplete.
+		return nil, err //nolint:wrapcheck // Error wrapping is unnecessary in autocomplete.
 	}
 
 	descSrc, err := proto.NewDescriptorSource(ctx, c.fs, cfg, cc)
 	if err != nil {
-		return nil, err //nolint:wrapcheck // Error wrapping is unnecessary in authocomplete.
+		return nil, err //nolint:wrapcheck // Error wrapping is unnecessary in autocomplete.
 	}
 
 	methods, err := descSrc.ListMethods()
 	if err != nil {
-		return nil, err //nolint:wrapcheck // Error wrapping is unnecessary in authocomplete.
+		return nil, err //nolint:wrapcheck // Error wrapping is unnecessary in autocomplete.
 	}
 
 	encounteredSymbols := map[string]struct{}{}
