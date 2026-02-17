@@ -8,7 +8,7 @@ EasyRPC is influenced by the utilities [`grpcurl`](https://github.com/fullstoryd
 [`evans`](https://github.com/ktr0731/evans), and aims to combine the two different approaches (basic CLI and REPL) into
 a more convenient tool for users.
 
-[TOC]
+[[_TOC_]]
 
 ## Installation
 
