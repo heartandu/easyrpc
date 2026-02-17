@@ -321,8 +321,9 @@ The precedence of the locations is as follows:
 You can initialize the configuration with empty values in the current working directory by running `easyrpc config init`.
 If you want to inspect the resulting configuration that will be used by `easyrpc`, run `easyrpc config dump`.
 
-For configuration autocompletion and validation you can use the [easyrpc.schema.json](easyrpc.schema.json) JSON Schema
-with your preferred editor or LSP.
+For configuration autocompletion and validation you can use the
+[easyrpc.schema.json](https://raw.githubusercontent.com/heartandu/easyrpc/refs/heads/master/easyrpc.schema.json)
+JSON Schema with your preferred editor or LSP.
 
 ### gRPC-Web
 
