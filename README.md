@@ -8,7 +8,27 @@ EasyRPC is influenced by the utilities [`grpcurl`](https://github.com/fullstoryd
 [`evans`](https://github.com/ktr0731/evans), and aims to combine the two different approaches (basic CLI and REPL) into
 a more convenient tool for users.
 
-[[_TOC_]]
+
+<!-- mtoc-start -->
+
+* [Installation](#installation)
+  * [Homebrew](#homebrew)
+  * [Binaries](#binaries)
+  * [Source](#source)
+  * [Register autocompletion](#register-autocompletion)
+* [Usage](#usage)
+  * [Invoking RPCs](#invoking-rpcs)
+  * [Streaming RPCs](#streaming-rpcs)
+  * [TLS](#tls)
+  * [Metadata](#metadata)
+  * [Input data](#input-data)
+  * [Request data preparation](#request-data-preparation)
+  * [Edit request before call/printout](#edit-request-before-callprintout)
+  * [Autocompletion](#autocompletion)
+  * [Configuration files](#configuration-files)
+  * [gRPC-Web](#grpc-web)
+
+<!-- mtoc-end -->
 
 ## Installation
 
