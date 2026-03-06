@@ -6,11 +6,22 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"testing"
 
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/require"
 
 	"github.com/heartandu/easyrpc/internal/app"
 )
+
+func homeDir(t *testing.T) string {
+	t.Helper()
+
+	home, err := os.UserHomeDir()
+	require.NoError(t, err, "failed to get home directory")
+
+	return home
+}
 
 func createTempFile(fs afero.Fs, name, contents string) (string, error) {
 	file, err := fs.Create(filepath.Join(afero.GetTempDir(fs, ""), name))
@@ -24,6 +35,25 @@ func createTempFile(fs afero.Fs, name, contents string) (string, error) {
 	}
 
 	return file.Name(), nil
+}
+
+func createFileAtPath(fs afero.Fs, path, contents string) error {
+	dir := filepath.Dir(path)
+	if err := fs.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	file, err := fs.Create(path)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	if _, err = file.WriteString(contents); err != nil {
+		return fmt.Errorf("failed to write contents: %w", err)
+	}
+
+	return nil
 }
 
 func run(fs afero.Fs, input io.Reader, env map[string]string, args ...string) ([]byte, error) {

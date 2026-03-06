@@ -46,7 +46,7 @@ func (c *Call) Run(cmd *cobra.Command, args []string) error {
 		return errors.Join(ErrValidation, err)
 	}
 
-	input, err := flags.HandleDataFlag(cmd, c.fs)
+	input, err := flags.HandleDataOrFileFlag(cmd, c.fs)
 	if err != nil {
 		return fmt.Errorf("failed to handle data flag: %w", err)
 	}

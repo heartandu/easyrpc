@@ -55,7 +55,7 @@ func (r *Request) Run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create descriptor source: %w", err)
 	}
 
-	input, err := flags.HandleDataFlag(cmd, r.fs)
+	input, err := flags.HandleDataOrFileFlag(cmd, r.fs)
 	if err != nil {
 		return fmt.Errorf("failed to handle data flag: %w", err)
 	}

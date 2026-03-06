@@ -13,7 +13,7 @@ import (
 // RegisterEditFlag registers the edit flag for a given command.
 // The flag allows the user edit input with a text editor of choice.
 func RegisterEditFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolP("edit", "e", false, "edit the request before printing")
+	cmd.Flags().BoolP("edit", "e", false, "edit the request before printing or calling RPCs")
 }
 
 // HandleEditFlag returns an editor.Editor instance if the edit flag is set. Otherwise it returns nil.
