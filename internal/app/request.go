@@ -20,9 +20,9 @@ func (a *App) registerRequestCmd() {
 		RunE:              requestCmd.Run,
 	}
 
+	flags.RegisterDataAndFileFlags(cmd)
 	flags.RegisterEditFlag(cmd)
 	flags.RegisterOutputFlag(cmd)
-	flags.RegisterDataFlag(cmd)
 
 	a.cmd.AddCommand(cmd)
 }

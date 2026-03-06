@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -13,10 +14,15 @@ import (
 )
 
 func TestRequest(t *testing.T) {
+	const tildeTestFileName = "easyrpc_test_msg.json"
+
 	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
 
 	requestFileName, err := createTempFile(fs, "msg.json", `{"msg":"file test"}`)
 	require.NoError(t, err, "failed to create input file")
+
+	err = createFileAtPath(fs, filepath.Join(homeDir(t), tildeTestFileName), `{"msg":"tilde test"}`)
+	require.NoError(t, err, "failed to create tilde test file")
 
 	reqWithUnknownFileName, err := createTempFile(
 		fs,
@@ -79,7 +85,7 @@ func TestRequest(t *testing.T) {
 		name string
 		args []string
 		in   io.Reader
-		want map[string]any
+		want []map[string]any
 	}{
 		{
 			name: "by proto",
@@ -92,7 +98,7 @@ func TestRequest(t *testing.T) {
 				"-p",
 				protoFile,
 			},
-			want: map[string]any{"msg": "oops"},
+			want: []map[string]any{{"msg": "oops"}},
 		},
 		{
 			name: "by proto with import all",
@@ -104,7 +110,7 @@ func TestRequest(t *testing.T) {
 				importPath,
 				"--import-all",
 			},
-			want: map[string]any{"msg": "good"},
+			want: []map[string]any{{"msg": "good"}},
 		},
 		{
 			name: "by reflection",
@@ -116,7 +122,7 @@ func TestRequest(t *testing.T) {
 				`{"msg":"hello"}`,
 				"-r",
 			},
-			want: map[string]any{"msg": "hello"},
+			want: []map[string]any{{"msg": "hello"}},
 		},
 		{
 			name: "data from flag with unknown field",
@@ -128,7 +134,7 @@ func TestRequest(t *testing.T) {
 				`{"$schema":"https://example.com/some/schema.json","msg":"with unknown"}`,
 				"-r",
 			},
-			want: map[string]any{"msg": "with unknown"},
+			want: []map[string]any{{"msg": "with unknown"}},
 		},
 		{
 			name: "data from file",
@@ -136,11 +142,11 @@ func TestRequest(t *testing.T) {
 				"echo.EchoService.Echo",
 				"-a",
 				address(insecureSocket),
-				"-d",
-				"@" + requestFileName,
+				"-f",
+				requestFileName,
 				"-r",
 			},
-			want: map[string]any{"msg": "file test"},
+			want: []map[string]any{{"msg": "file test"}},
 		},
 		{
 			name: "data from file with unknown field",
@@ -148,11 +154,23 @@ func TestRequest(t *testing.T) {
 				"echo.EchoService.Echo",
 				"-a",
 				address(insecureSocket),
-				"-d",
-				"@" + reqWithUnknownFileName,
+				"-f",
+				reqWithUnknownFileName,
 				"-r",
 			},
-			want: map[string]any{"msg": "file with unknown"},
+			want: []map[string]any{{"msg": "file with unknown"}},
+		},
+		{
+			name: "data from file with tilde path",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-f",
+				"~/" + tildeTestFileName,
+				"-r",
+			},
+			want: []map[string]any{{"msg": "tilde test"}},
 		},
 		{
 			name: "data from stdin",
@@ -165,7 +183,7 @@ func TestRequest(t *testing.T) {
 				"-r",
 			},
 			in:   strings.NewReader(`{"msg":"stdin test"}`),
-			want: map[string]any{"msg": "stdin test"},
+			want: []map[string]any{{"msg": "stdin test"}},
 		},
 		{
 			name: "data from stdin with unknown field",
@@ -178,7 +196,7 @@ func TestRequest(t *testing.T) {
 				"-r",
 			},
 			in:   strings.NewReader(`{"$schema":"https://example.com/some/schema.json","msg":"stdin with unknown"}`),
-			want: map[string]any{"msg": "stdin with unknown"},
+			want: []map[string]any{{"msg": "stdin with unknown"}},
 		},
 		{
 			name: "empty data outputs template",
@@ -188,7 +206,7 @@ func TestRequest(t *testing.T) {
 				address(insecureSocket),
 				"-r",
 			},
-			want: map[string]any{"msg": ""},
+			want: []map[string]any{{"msg": ""}},
 		},
 		{
 			name: "by proto with config",
@@ -199,7 +217,7 @@ func TestRequest(t *testing.T) {
 				"-d",
 				`{"msg":"proto config"}`,
 			},
-			want: map[string]any{"msg": "proto config"},
+			want: []map[string]any{{"msg": "proto config"}},
 		},
 		{
 			name: "by proto import all with config",
@@ -210,7 +228,7 @@ func TestRequest(t *testing.T) {
 				"-d",
 				`{"msg":"proto import all"}`,
 			},
-			want: map[string]any{"msg": "proto import all"},
+			want: []map[string]any{{"msg": "proto import all"}},
 		},
 		{
 			name: "by reflection with config",
@@ -221,7 +239,7 @@ func TestRequest(t *testing.T) {
 				"-d",
 				`{"msg":"reflection config"}`,
 			},
-			want: map[string]any{"msg": "reflection config"},
+			want: []map[string]any{{"msg": "reflection config"}},
 		},
 		{
 			name: "tls with only root certificate",
@@ -236,7 +254,7 @@ func TestRequest(t *testing.T) {
 				"--cacert",
 				cacert,
 			},
-			want: map[string]any{"msg": "tls"},
+			want: []map[string]any{{"msg": "tls"}},
 		},
 		{
 			name: "tls with server certificates",
@@ -255,7 +273,7 @@ func TestRequest(t *testing.T) {
 				"--key",
 				key,
 			},
-			want: map[string]any{"msg": "tls certs"},
+			want: []map[string]any{{"msg": "tls certs"}},
 		},
 		{
 			name: "tls with server certificates config",
@@ -266,7 +284,7 @@ func TestRequest(t *testing.T) {
 				"-d",
 				`{"msg":"tls certs config"}`,
 			},
-			want: map[string]any{"msg": "tls certs config"},
+			want: []map[string]any{{"msg": "tls certs config"}},
 		},
 		{
 			name: "package flag specified",
@@ -280,7 +298,7 @@ func TestRequest(t *testing.T) {
 				"--package",
 				"echo",
 			},
-			want: map[string]any{"msg": "package flag"},
+			want: []map[string]any{{"msg": "package flag"}},
 		},
 		{
 			name: "package and service flag specified",
@@ -296,7 +314,7 @@ func TestRequest(t *testing.T) {
 				"--service",
 				"EchoService",
 			},
-			want: map[string]any{"msg": "package and service flags"},
+			want: []map[string]any{{"msg": "package and service flags"}},
 		},
 		{
 			name: "package and service config file specified",
@@ -307,7 +325,7 @@ func TestRequest(t *testing.T) {
 				"-d",
 				`{"msg":"package and service flags"}`,
 			},
-			want: map[string]any{"msg": "package and service flags"},
+			want: []map[string]any{{"msg": "package and service flags"}},
 		},
 		{
 			name: "web request with config",
@@ -318,7 +336,7 @@ func TestRequest(t *testing.T) {
 				"-d",
 				`{"msg":"web config"}`,
 			},
-			want: map[string]any{"msg": "web config"},
+			want: []map[string]any{{"msg": "web config"}},
 		},
 		{
 			name: "web request",
@@ -331,7 +349,7 @@ func TestRequest(t *testing.T) {
 				"-d",
 				`{"msg":"web unary"}`,
 			},
-			want: map[string]any{"msg": "web unary"},
+			want: []map[string]any{{"msg": "web unary"}},
 		},
 		{
 			name: "web tls request with config",
@@ -342,29 +360,8 @@ func TestRequest(t *testing.T) {
 				"-d",
 				`{"msg":"web tls config"}`,
 			},
-			want: map[string]any{"msg": "web tls config"},
+			want: []map[string]any{{"msg": "web tls config"}},
 		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			b, err := runRequest(fs, tt.in, tt.args...)
-			require.NoErrorf(t, err, "command failed with output: %s", string(b))
-
-			got := map[string]any{}
-			require.NoError(t, json.Unmarshal(b, &got))
-			require.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func TestRequest_MultipleMessages(t *testing.T) {
-	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
-
-	tests := []struct {
-		name string
-		args []string
-		want []map[string]any
-	}{
 		{
 			name: "client streaming request format",
 			args: []string{
@@ -392,7 +389,7 @@ func TestRequest_MultipleMessages(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b, err := runRequest(fs, nil, tt.args...)
+			b, err := runRequest(fs, tt.in, tt.args...)
 			require.NoErrorf(t, err, "command failed with output: %s", string(b))
 
 			got := []map[string]any{}
@@ -506,8 +503,8 @@ func TestRequest_ErrorCases(t *testing.T) {
 				"echo.EchoService.Echo",
 				"-a",
 				address(insecureSocket),
-				"-d",
-				"@/nonexistent/file.json",
+				"-f",
+				"/nonexistent/file.json",
 				"-r",
 			},
 			wantErr: "file does not exist",
@@ -521,6 +518,20 @@ func TestRequest_ErrorCases(t *testing.T) {
 				"-r",
 			},
 			wantErr: "Symbol not found: ..UnknownMethod",
+		},
+		{
+			name: "both data and file flags specified",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"msg":"test"}`,
+				"-f",
+				"/some/file.json",
+				"-r",
+			},
+			wantErr: "only data or file flag is allowed to be set",
 		},
 	}
 	for _, tt := range tests {

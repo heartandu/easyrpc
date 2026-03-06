@@ -20,7 +20,7 @@ func (a *App) registerCallCmd() {
 		RunE:              callCmd.Run,
 	}
 
-	flags.RegisterDataFlag(cmd)
+	flags.RegisterDataAndFileFlags(cmd)
 	flags.RegisterEditFlag(cmd)
 
 	a.cmd.AddCommand(cmd)

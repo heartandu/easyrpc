@@ -175,8 +175,11 @@ $ easyrpc c -a localhost:12345 -r example.package.Service.Method -d '{"msg":"hel
 $ echo '{"msg":"hello"}' | easyrpc c -a localhost:12345 -r example.package.Service.Method -d -
 
 # Reading the data from file
-$ easyrpc c -a localhost:12345 -r example.package.Service.Method -d @~/some/path/request.json
+$ easyrpc c -a localhost:12345 -r example.package.Service.Method -f ~/some/path/request.json
 ```
+
+> [!NOTE]
+> Only one of `-d` or `-f` flags may be set at the same time. They are mutually exclusive.
 
 ### Request data preparation
 
@@ -219,10 +222,10 @@ default will be used instead.
 $ easyrpc c example.package.Service.Method -e
 
 # Pass an existing request and then edit that request before call.
-$ easyrpc c example.package.Service.Method -d request.json -e
+$ easyrpc c example.package.Service.Method -f request.json -e
 
 # Edit also works with request command which helps with request preparation for future reuse.
-$ easyrpc r example.package.Service.Method -d request.json -e -o modified_request.json
+$ easyrpc r example.package.Service.Method -f request.json -e -o modified_request.json
 
 # If you supply more than one message for a client streaming method, each message will be opened for editing in
 # sequence.

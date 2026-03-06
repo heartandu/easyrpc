@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -13,10 +14,15 @@ import (
 )
 
 func TestCall(t *testing.T) {
+	const tildeTestFileName = "easyrpc_test_msg.json"
+
 	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
 
 	requestFileName, err := createTempFile(fs, "msg.json", `{"msg":"file test"}`)
 	require.NoError(t, err, "failed to create input file")
+
+	err = createFileAtPath(fs, filepath.Join(homeDir(t), tildeTestFileName), `{"msg":"tilde test"}`)
+	require.NoError(t, err, "failed to create tilde test file")
 
 	reqWithUnknownFileName, err := createTempFile(
 		fs,
@@ -150,8 +156,8 @@ func TestCall(t *testing.T) {
 				"echo.EchoService.Echo",
 				"-a",
 				address(insecureSocket),
-				"-d",
-				"@" + requestFileName,
+				"-f",
+				requestFileName,
 				"-r",
 			},
 			want: []map[string]any{{"msg": "file test"}},
@@ -162,11 +168,23 @@ func TestCall(t *testing.T) {
 				"echo.EchoService.Echo",
 				"-a",
 				address(insecureSocket),
-				"-d",
-				"@" + reqWithUnknownFileName,
+				"-f",
+				reqWithUnknownFileName,
 				"-r",
 			},
 			want: []map[string]any{{"msg": "file with unknown"}},
+		},
+		{
+			name: "data from file with tilde path",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-f",
+				"~/" + tildeTestFileName,
+				"-r",
+			},
+			want: []map[string]any{{"msg": "tilde test"}},
 		},
 		{
 			name: "data from stdin",
@@ -485,6 +503,107 @@ func TestCall(t *testing.T) {
 			}
 
 			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestCall_ErrorCases(t *testing.T) {
+	fs := afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
+
+	tests := []struct {
+		name    string
+		args    []string
+		wantErr string
+	}{
+		{
+			name: "invalid method name",
+			args: []string{
+				"echo.NonExistentService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"msg":"test"}`,
+				"-r",
+			},
+			wantErr: "Symbol not found: echo.NonExistentService.Echo",
+		},
+		{
+			name: "missing reflection and proto files",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"msg":"test"}`,
+			},
+			wantErr: "at least 1 proto file must be specified, imported all files or reflection used",
+		},
+		{
+			name: "connection refused",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				"localhost:59999",
+				"-r",
+				"-d",
+				`{"msg":"test"}`,
+			},
+			wantErr: "connection refused",
+		},
+		{
+			name: "invalid json in data flag",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{invalid json}`,
+				"-r",
+			},
+			wantErr: "invalid character 'i' looking for beginning of object key string",
+		},
+		{
+			name: "file not found",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-f",
+				"/nonexistent/file.json",
+				"-r",
+			},
+			wantErr: "file does not exist",
+		},
+		{
+			name: "unknown method without package and service flags",
+			args: []string{
+				"UnknownMethod",
+				"-a",
+				address(insecureSocket),
+				"-r",
+			},
+			wantErr: "Symbol not found: ..UnknownMethod",
+		},
+		{
+			name: "both data and file flags specified",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"msg":"test"}`,
+				"-f",
+				"/some/file.json",
+				"-r",
+			},
+			wantErr: "only data or file flag is allowed to be set",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := runCall(fs, nil, tt.args...)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tt.wantErr)
 		})
 	}
 }
