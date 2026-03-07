@@ -161,18 +161,9 @@ func (c *ProtoComp) symbols(
 	encounteredSymbols := map[string]struct{}{}
 	result := make([]string, 0)
 
-	isCaseInsensitive := toComplete == strings.ToLower(toComplete)
-
-	completionToCompare := toComplete
-	if isCaseInsensitive {
-		completionToCompare = strings.ToLower(completionToCompare)
-	}
-
+	completionToCompare := strings.ToLower(toComplete)
 	for symbol := range filterMapIter(methods, filterMapFunc) {
-		symbolToCompare := symbol
-		if isCaseInsensitive {
-			symbolToCompare = strings.ToLower(symbolToCompare)
-		}
+		symbolToCompare := strings.ToLower(symbol)
 
 		if strings.Contains(symbolToCompare, completionToCompare) {
 			if _, ok := encounteredSymbols[symbol]; !ok {

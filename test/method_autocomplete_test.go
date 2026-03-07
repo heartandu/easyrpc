@@ -200,7 +200,7 @@ func TestMethodAutocomplete(t *testing.T) {
 			},
 		},
 		{
-			name: "partial case sensitive completion",
+			name: "partial case insensitive completion",
 			args: []string{
 				"-r",
 				"-a",
@@ -209,6 +209,8 @@ func TestMethodAutocomplete(t *testing.T) {
 			},
 			want: []string{
 				"echo.EchoService.Error",
+				"grpc.reflection.v1.ServerReflection.ServerReflectionInfo",
+				"grpc.reflection.v1alpha.ServerReflection.ServerReflectionInfo",
 			},
 		},
 		{
