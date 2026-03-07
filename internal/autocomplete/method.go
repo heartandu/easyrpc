@@ -11,9 +11,8 @@ import (
 	"github.com/heartandu/easyrpc/internal/client"
 	"github.com/heartandu/easyrpc/internal/config"
 	"github.com/heartandu/easyrpc/internal/proto"
+	"github.com/heartandu/easyrpc/pkg/fqn"
 )
-
-const delim = "."
 
 // ProtoComp represents a protobuf symbol autocompletion functionality.
 type ProtoComp struct {
@@ -31,7 +30,7 @@ func NewProtoComp(fs afero.Fs, cfgFunc func() (config.Config, error)) *ProtoComp
 
 // CompleteMethod provides autocomplete suggestions for methods.
 func (c *ProtoComp) CompleteMethod(
-	_ *cobra.Command,
+	cmd *cobra.Command,
 	args []string,
 	toComplete string,
 ) ([]string, cobra.ShellCompDirective) {
@@ -44,21 +43,21 @@ func (c *ProtoComp) CompleteMethod(
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	methods, err := c.symbols(&cfg, toComplete, func(pkg, svc, method string) string {
-		const methodPartsCount = 3
-
-		result := make([]string, 0, methodPartsCount)
+	methods, err := c.symbols(cmd.Context(), &cfg, toComplete, func(fqmn fqn.FQMN) string {
+		b := fqmn.PartsBuilder()
 
 		// If package name has been set, and doesn't match
 		// the received one, filter the method out.
 		// If they match, omit the package name from the result.
-		// Otherwise, use it to form a fully qualified name.
+		// Otherwise, if the method contains a package name, use it
+		// to form a fully qualified name.
+		// WithPackage call also forces service name to be included for correctness.
 		if cfg.Request.Package != "" {
-			if pkg != cfg.Request.Package {
+			if fqmn.PackageName != cfg.Request.Package {
 				return ""
 			}
-		} else {
-			result = append(result, pkg)
+		} else if fqmn.PackageName != "" {
+			b.WithPackage()
 		}
 
 		// If service name has been set, and doesn't match
@@ -66,25 +65,14 @@ func (c *ProtoComp) CompleteMethod(
 		// If they match, omit the service name from the result.
 		// Otherwise, use it to form a fully qualified name.
 		if cfg.Request.Service != "" {
-			// Service name may as well be a fully qualivied service name,
-			// so we also need to handle this special case.
-			if !servicesMatch(cfg.Request.Service, pkg, svc) {
+			if fqmn.Service != cfg.Request.Service {
 				return ""
 			}
-
-			// If we only specified the service name, we need to append it to obtain the correct method name.
-			// Otherwise, we would render "example.Method" from the method name "example.Service.Method",
-			// which would be invalid.
-			if len(result) > 0 {
-				result = append(result, svc)
-			}
 		} else {
-			result = append(result, svc)
+			b.WithService()
 		}
 
-		result = append(result, method)
-
-		return strings.Join(result, delim)
+		return b.String()
 	})
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
@@ -95,7 +83,7 @@ func (c *ProtoComp) CompleteMethod(
 
 // CompletePackage provides autocomplete suggestions for package names.
 func (c *ProtoComp) CompletePackage(
-	_ *cobra.Command,
+	cmd *cobra.Command,
 	args []string,
 	toComplete string,
 ) ([]string, cobra.ShellCompDirective) {
@@ -108,8 +96,8 @@ func (c *ProtoComp) CompletePackage(
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	packages, err := c.symbols(&cfg, toComplete, func(pkg, _, _ string) string {
-		return pkg
+	packages, err := c.symbols(cmd.Context(), &cfg, toComplete, func(fqmn fqn.FQMN) string {
+		return fqmn.PackageName
 	})
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
@@ -120,7 +108,7 @@ func (c *ProtoComp) CompletePackage(
 
 // CompleteService provides autocomplete suggestions for service names.
 func (c *ProtoComp) CompleteService(
-	_ *cobra.Command,
+	cmd *cobra.Command,
 	args []string,
 	toComplete string,
 ) ([]string, cobra.ShellCompDirective) {
@@ -133,26 +121,14 @@ func (c *ProtoComp) CompleteService(
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	services, err := c.symbols(&cfg, toComplete, func(pkg, svc, _ string) string {
-		const servicePartsCount = 2
-
-		parts := make([]string, 0, servicePartsCount)
-
+	services, err := c.symbols(cmd.Context(), &cfg, toComplete, func(fqmn fqn.FQMN) string {
 		// If package name has been set, and doesn't match
 		// the received one, filter the method out.
-		// If they match, omit the package name from the result.
-		// Otherwise, use it to form a fully qualified name.
-		if cfg.Request.Package != "" {
-			if pkg != cfg.Request.Package {
-				return ""
-			}
-		} else {
-			parts = append(parts, pkg)
+		if cfg.Request.Package != "" && fqmn.PackageName != cfg.Request.Package {
+			return ""
 		}
 
-		parts = append(parts, svc)
-
-		return strings.Join(parts, delim)
+		return fqmn.Service
 	})
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
@@ -162,12 +138,11 @@ func (c *ProtoComp) CompleteService(
 }
 
 func (c *ProtoComp) symbols(
+	ctx context.Context,
 	cfg *config.Config,
 	toComplete string,
-	filterMapFunc func(pkg, svc, method string) string,
+	filterMapFunc func(fqmn fqn.FQMN) string,
 ) ([]string, error) {
-	ctx := context.Background()
-
 	cc, err := client.New(c.fs, cfg)
 	if err != nil {
 		return nil, err //nolint:wrapcheck // Error wrapping is unnecessary in autocomplete.
@@ -195,7 +170,6 @@ func (c *ProtoComp) symbols(
 
 	for symbol := range filterMapIter(methods, filterMapFunc) {
 		symbolToCompare := symbol
-
 		if isCaseInsensitive {
 			symbolToCompare = strings.ToLower(symbolToCompare)
 		}
@@ -212,17 +186,10 @@ func (c *ProtoComp) symbols(
 	return result, nil
 }
 
-func filterMapIter(s []string, f func(pkg, svc, method string) string) iter.Seq[string] {
+func filterMapIter(s []string, f func(fqmn fqn.FQMN) string) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		for _, s := range s {
-			const minParts = 3
-
-			parts := strings.Split(s, delim)
-			if len(parts) < minParts {
-				continue
-			}
-
-			s = f(strings.Join(parts[:len(parts)-2], delim), parts[len(parts)-2], parts[len(parts)-1])
+			s = f(fqn.ParseFQMN(s))
 			if s == "" {
 				continue
 			}
@@ -232,19 +199,4 @@ func filterMapIter(s []string, f func(pkg, svc, method string) string) iter.Seq[
 			}
 		}
 	}
-}
-
-func servicesMatch(cfgService, pkg, svc string) bool {
-	svcParts := strings.Split(cfgService, delim)
-	if len(svcParts) > 1 {
-		if pkg != strings.Join(svcParts[:len(svcParts)-1], delim) {
-			return false
-		}
-	}
-
-	if svc != svcParts[len(svcParts)-1] {
-		return false
-	}
-
-	return true
 }

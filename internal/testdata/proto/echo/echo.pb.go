@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v6.33.4
-// source: test.proto
+// source: echo/echo.proto
 
-package testdata
+package echo
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -30,7 +30,7 @@ type EchoRequest struct {
 
 func (x *EchoRequest) Reset() {
 	*x = EchoRequest{}
-	mi := &file_test_proto_msgTypes[0]
+	mi := &file_echo_echo_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *EchoRequest) String() string {
 func (*EchoRequest) ProtoMessage() {}
 
 func (x *EchoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[0]
+	mi := &file_echo_echo_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *EchoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EchoRequest.ProtoReflect.Descriptor instead.
 func (*EchoRequest) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{0}
+	return file_echo_echo_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *EchoRequest) GetMsg() string {
@@ -74,7 +74,7 @@ type EchoResponse struct {
 
 func (x *EchoResponse) Reset() {
 	*x = EchoResponse{}
-	mi := &file_test_proto_msgTypes[1]
+	mi := &file_echo_echo_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -86,7 +86,7 @@ func (x *EchoResponse) String() string {
 func (*EchoResponse) ProtoMessage() {}
 
 func (x *EchoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[1]
+	mi := &file_echo_echo_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,7 +99,7 @@ func (x *EchoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EchoResponse.ProtoReflect.Descriptor instead.
 func (*EchoResponse) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{1}
+	return file_echo_echo_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *EchoResponse) GetMsg() string {
@@ -118,7 +118,7 @@ type ErrorRequest struct {
 
 func (x *ErrorRequest) Reset() {
 	*x = ErrorRequest{}
-	mi := &file_test_proto_msgTypes[2]
+	mi := &file_echo_echo_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -130,7 +130,7 @@ func (x *ErrorRequest) String() string {
 func (*ErrorRequest) ProtoMessage() {}
 
 func (x *ErrorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[2]
+	mi := &file_echo_echo_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -143,7 +143,7 @@ func (x *ErrorRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ErrorRequest.ProtoReflect.Descriptor instead.
 func (*ErrorRequest) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{2}
+	return file_echo_echo_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ErrorRequest) GetMsg() string {
@@ -162,7 +162,7 @@ type ErrorResponse struct {
 
 func (x *ErrorResponse) Reset() {
 	*x = ErrorResponse{}
-	mi := &file_test_proto_msgTypes[3]
+	mi := &file_echo_echo_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -174,7 +174,7 @@ func (x *ErrorResponse) String() string {
 func (*ErrorResponse) ProtoMessage() {}
 
 func (x *ErrorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[3]
+	mi := &file_echo_echo_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -187,7 +187,7 @@ func (x *ErrorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ErrorResponse.ProtoReflect.Descriptor instead.
 func (*ErrorResponse) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{3}
+	return file_echo_echo_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ErrorResponse) GetMsg() string {
@@ -206,7 +206,7 @@ type ClientStreamRequest struct {
 
 func (x *ClientStreamRequest) Reset() {
 	*x = ClientStreamRequest{}
-	mi := &file_test_proto_msgTypes[4]
+	mi := &file_echo_echo_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -218,7 +218,7 @@ func (x *ClientStreamRequest) String() string {
 func (*ClientStreamRequest) ProtoMessage() {}
 
 func (x *ClientStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[4]
+	mi := &file_echo_echo_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -231,7 +231,7 @@ func (x *ClientStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientStreamRequest.ProtoReflect.Descriptor instead.
 func (*ClientStreamRequest) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{4}
+	return file_echo_echo_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ClientStreamRequest) GetMsg() string {
@@ -250,7 +250,7 @@ type ClientStreamResponse struct {
 
 func (x *ClientStreamResponse) Reset() {
 	*x = ClientStreamResponse{}
-	mi := &file_test_proto_msgTypes[5]
+	mi := &file_echo_echo_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -262,7 +262,7 @@ func (x *ClientStreamResponse) String() string {
 func (*ClientStreamResponse) ProtoMessage() {}
 
 func (x *ClientStreamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[5]
+	mi := &file_echo_echo_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -275,7 +275,7 @@ func (x *ClientStreamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientStreamResponse.ProtoReflect.Descriptor instead.
 func (*ClientStreamResponse) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{5}
+	return file_echo_echo_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ClientStreamResponse) GetMsgs() []string {
@@ -294,7 +294,7 @@ type ServerStreamRequest struct {
 
 func (x *ServerStreamRequest) Reset() {
 	*x = ServerStreamRequest{}
-	mi := &file_test_proto_msgTypes[6]
+	mi := &file_echo_echo_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -306,7 +306,7 @@ func (x *ServerStreamRequest) String() string {
 func (*ServerStreamRequest) ProtoMessage() {}
 
 func (x *ServerStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[6]
+	mi := &file_echo_echo_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -319,7 +319,7 @@ func (x *ServerStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerStreamRequest.ProtoReflect.Descriptor instead.
 func (*ServerStreamRequest) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{6}
+	return file_echo_echo_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ServerStreamRequest) GetMsgs() []string {
@@ -338,7 +338,7 @@ type ServerStreamResponse struct {
 
 func (x *ServerStreamResponse) Reset() {
 	*x = ServerStreamResponse{}
-	mi := &file_test_proto_msgTypes[7]
+	mi := &file_echo_echo_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -350,7 +350,7 @@ func (x *ServerStreamResponse) String() string {
 func (*ServerStreamResponse) ProtoMessage() {}
 
 func (x *ServerStreamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[7]
+	mi := &file_echo_echo_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -363,7 +363,7 @@ func (x *ServerStreamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerStreamResponse.ProtoReflect.Descriptor instead.
 func (*ServerStreamResponse) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{7}
+	return file_echo_echo_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ServerStreamResponse) GetMsg() string {
@@ -382,7 +382,7 @@ type BidiStreamRequest struct {
 
 func (x *BidiStreamRequest) Reset() {
 	*x = BidiStreamRequest{}
-	mi := &file_test_proto_msgTypes[8]
+	mi := &file_echo_echo_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -394,7 +394,7 @@ func (x *BidiStreamRequest) String() string {
 func (*BidiStreamRequest) ProtoMessage() {}
 
 func (x *BidiStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[8]
+	mi := &file_echo_echo_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -407,7 +407,7 @@ func (x *BidiStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BidiStreamRequest.ProtoReflect.Descriptor instead.
 func (*BidiStreamRequest) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{8}
+	return file_echo_echo_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *BidiStreamRequest) GetMsg() string {
@@ -426,7 +426,7 @@ type BidiStreamResponse struct {
 
 func (x *BidiStreamResponse) Reset() {
 	*x = BidiStreamResponse{}
-	mi := &file_test_proto_msgTypes[9]
+	mi := &file_echo_echo_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -438,7 +438,7 @@ func (x *BidiStreamResponse) String() string {
 func (*BidiStreamResponse) ProtoMessage() {}
 
 func (x *BidiStreamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_test_proto_msgTypes[9]
+	mi := &file_echo_echo_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -451,7 +451,7 @@ func (x *BidiStreamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BidiStreamResponse.ProtoReflect.Descriptor instead.
 func (*BidiStreamResponse) Descriptor() ([]byte, []int) {
-	return file_test_proto_rawDescGZIP(), []int{9}
+	return file_echo_echo_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *BidiStreamResponse) GetMsg() string {
@@ -461,12 +461,11 @@ func (x *BidiStreamResponse) GetMsg() string {
 	return ""
 }
 
-var File_test_proto protoreflect.FileDescriptor
+var File_echo_echo_proto protoreflect.FileDescriptor
 
-const file_test_proto_rawDesc = "" +
+const file_echo_echo_proto_rawDesc = "" +
 	"\n" +
-	"\n" +
-	"test.proto\x12\x04echo\"\x1f\n" +
+	"\x0fecho/echo.proto\x12\x04echo\"\x1f\n" +
 	"\vEchoRequest\x12\x10\n" +
 	"\x03msg\x18\x01 \x01(\tR\x03msg\" \n" +
 	"\fEchoResponse\x12\x10\n" +
@@ -493,22 +492,22 @@ const file_test_proto_rawDesc = "" +
 	"\fClientStream\x12\x19.echo.ClientStreamRequest\x1a\x1a.echo.ClientStreamResponse\"\x00(\x01\x12I\n" +
 	"\fServerStream\x12\x19.echo.ServerStreamRequest\x1a\x1a.echo.ServerStreamResponse\"\x000\x01\x12E\n" +
 	"\n" +
-	"BidiStream\x12\x17.echo.BidiStreamRequest\x1a\x18.echo.BidiStreamResponse\"\x00(\x010\x01B0Z.github.com/heartandu/easyrpc/internal/testdatab\x06proto3"
+	"BidiStream\x12\x17.echo.BidiStreamRequest\x1a\x18.echo.BidiStreamResponse\"\x00(\x010\x01B;Z9github.com/heartandu/easyrpc/internal/testdata/proto/echob\x06proto3"
 
 var (
-	file_test_proto_rawDescOnce sync.Once
-	file_test_proto_rawDescData []byte
+	file_echo_echo_proto_rawDescOnce sync.Once
+	file_echo_echo_proto_rawDescData []byte
 )
 
-func file_test_proto_rawDescGZIP() []byte {
-	file_test_proto_rawDescOnce.Do(func() {
-		file_test_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_test_proto_rawDesc), len(file_test_proto_rawDesc)))
+func file_echo_echo_proto_rawDescGZIP() []byte {
+	file_echo_echo_proto_rawDescOnce.Do(func() {
+		file_echo_echo_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_echo_echo_proto_rawDesc), len(file_echo_echo_proto_rawDesc)))
 	})
-	return file_test_proto_rawDescData
+	return file_echo_echo_proto_rawDescData
 }
 
-var file_test_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
-var file_test_proto_goTypes = []any{
+var file_echo_echo_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_echo_echo_proto_goTypes = []any{
 	(*EchoRequest)(nil),          // 0: echo.EchoRequest
 	(*EchoResponse)(nil),         // 1: echo.EchoResponse
 	(*ErrorRequest)(nil),         // 2: echo.ErrorRequest
@@ -520,7 +519,7 @@ var file_test_proto_goTypes = []any{
 	(*BidiStreamRequest)(nil),    // 8: echo.BidiStreamRequest
 	(*BidiStreamResponse)(nil),   // 9: echo.BidiStreamResponse
 }
-var file_test_proto_depIdxs = []int32{
+var file_echo_echo_proto_depIdxs = []int32{
 	0, // 0: echo.EchoService.Echo:input_type -> echo.EchoRequest
 	2, // 1: echo.EchoService.Error:input_type -> echo.ErrorRequest
 	4, // 2: echo.EchoService.ClientStream:input_type -> echo.ClientStreamRequest
@@ -538,26 +537,26 @@ var file_test_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_test_proto_init() }
-func file_test_proto_init() {
-	if File_test_proto != nil {
+func init() { file_echo_echo_proto_init() }
+func file_echo_echo_proto_init() {
+	if File_echo_echo_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_test_proto_rawDesc), len(file_test_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_echo_echo_proto_rawDesc), len(file_echo_echo_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_test_proto_goTypes,
-		DependencyIndexes: file_test_proto_depIdxs,
-		MessageInfos:      file_test_proto_msgTypes,
+		GoTypes:           file_echo_echo_proto_goTypes,
+		DependencyIndexes: file_echo_echo_proto_depIdxs,
+		MessageInfos:      file_echo_echo_proto_msgTypes,
 	}.Build()
-	File_test_proto = out.File
-	file_test_proto_goTypes = nil
-	file_test_proto_depIdxs = nil
+	File_echo_echo_proto = out.File
+	file_echo_echo_proto_goTypes = nil
+	file_echo_echo_proto_depIdxs = nil
 }

@@ -10,7 +10,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/heartandu/easyrpc/internal/testdata"
+	"github.com/heartandu/easyrpc/internal/testdata/proto/echo"
 	"github.com/heartandu/easyrpc/pkg/format"
 )
 
@@ -22,19 +22,19 @@ func TestJSONMessageParser_Parse(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   io.Reader
-		want    *testdata.EchoRequest
+		want    *echo.EchoRequest
 		wantErr error
 	}{
 		{
 			name:    "success",
 			input:   strings.NewReader(`{"msg":"hi"}`),
-			want:    &testdata.EchoRequest{Msg: "hi"},
+			want:    &echo.EchoRequest{Msg: "hi"},
 			wantErr: nil,
 		},
 		{
 			name:    "empty message",
 			input:   strings.NewReader(""),
-			want:    &testdata.EchoRequest{},
+			want:    &echo.EchoRequest{},
 			wantErr: io.EOF,
 		},
 		{
@@ -42,7 +42,7 @@ func TestJSONMessageParser_Parse(t *testing.T) {
 			input: funcReader(func(p []byte) (int, error) {
 				return 0, testErr
 			}),
-			want:    &testdata.EchoRequest{},
+			want:    &echo.EchoRequest{},
 			wantErr: testErr,
 		},
 	}
@@ -52,7 +52,7 @@ func TestJSONMessageParser_Parse(t *testing.T) {
 
 			parser := format.JSONMessageParser(tt.input, protojson.UnmarshalOptions{})
 
-			got := &testdata.EchoRequest{}
+			got := &echo.EchoRequest{}
 
 			err := parser.Next(got)
 			require.ErrorIs(t, err, tt.wantErr)

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"github.com/heartandu/easyrpc/internal/testdata"
+	"github.com/heartandu/easyrpc/internal/testdata/proto/echo"
 	"github.com/heartandu/easyrpc/pkg/format"
 )
 
@@ -16,13 +16,13 @@ func TestJSONMessageFormatter_Format(t *testing.T) {
 	tests := []struct {
 		name string
 		out  protojson.MarshalOptions
-		msg  *testdata.EchoResponse
+		msg  *echo.EchoResponse
 		want string
 	}{
 		{
 			name: "default",
 			out:  protojson.MarshalOptions{},
-			msg:  &testdata.EchoResponse{Msg: "hi"},
+			msg:  &echo.EchoResponse{Msg: "hi"},
 			want: `{"msg":"hi"}`,
 		},
 	}

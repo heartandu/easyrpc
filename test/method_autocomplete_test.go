@@ -78,6 +78,8 @@ func TestMethodAutocomplete(t *testing.T) {
 				"echo.EchoService.ClientStream",
 				"echo.EchoService.ServerStream",
 				"echo.EchoService.BidiStream",
+				"TimeService.Now",
+				"EchoService.Echo",
 				"types.TypesService.ScalarTypes",
 				"types.TypesService.EnumTypes",
 				"types.TypesService.Maps",
@@ -97,6 +99,8 @@ func TestMethodAutocomplete(t *testing.T) {
 				"",
 			},
 			want: []string{
+				"TimeService.Now",
+				"EchoService.Echo",
 				"echo.EchoService.Echo",
 				"echo.EchoService.Error",
 				"echo.EchoService.ClientStream",
@@ -142,6 +146,8 @@ func TestMethodAutocomplete(t *testing.T) {
 				"echo.EchoService.ClientStream",
 				"echo.EchoService.ServerStream",
 				"echo.EchoService.BidiStream",
+				"TimeService.Now",
+				"EchoService.Echo",
 				"types.TypesService.ScalarTypes",
 				"types.TypesService.EnumTypes",
 				"types.TypesService.Maps",
@@ -160,6 +166,8 @@ func TestMethodAutocomplete(t *testing.T) {
 				"",
 			},
 			want: []string{
+				"TimeService.Now",
+				"EchoService.Echo",
 				"echo.EchoService.Echo",
 				"echo.EchoService.Error",
 				"echo.EchoService.ClientStream",
@@ -309,6 +317,24 @@ func TestMethodAutocomplete(t *testing.T) {
 			},
 		},
 		{
+			name: "completion with only service flag",
+			args: []string{
+				"--config",
+				reflectConf,
+				"--service",
+				"EchoService",
+				"",
+			},
+			want: []string{
+				"Echo", // This is valid due to having the exact same service name but without a package
+				"echo.EchoService.Echo",
+				"echo.EchoService.Error",
+				"echo.EchoService.ClientStream",
+				"echo.EchoService.ServerStream",
+				"echo.EchoService.BidiStream",
+			},
+		},
+		{
 			name: "partial completion with only service flag",
 			args: []string{
 				"--config",
@@ -324,7 +350,7 @@ func TestMethodAutocomplete(t *testing.T) {
 			},
 		},
 		{
-			name: "partial completion with fully qualified service",
+			name: "partial completion doesn't match anything with fully qualified service",
 			args: []string{
 				"--config",
 				reflectConf,
@@ -332,25 +358,10 @@ func TestMethodAutocomplete(t *testing.T) {
 				"echo.EchoService",
 				"stream",
 			},
-			want: []string{
-				"echo.EchoService.ClientStream",
-				"echo.EchoService.ServerStream",
-				"echo.EchoService.BidiStream",
-			},
-		},
-		{
-			name: "partial completion with fully qualified service that doesn't exist",
-			args: []string{
-				"--config",
-				reflectConf,
-				"--service",
-				"test.EchoService",
-				"stream",
-			},
 			want: []string{},
 		},
 		{
-			name: "partial completion with fully qualified service and package",
+			name: "partial completion doesn't match anything with fully qualified service and package",
 			args: []string{
 				"--config",
 				reflectConf,
@@ -360,11 +371,7 @@ func TestMethodAutocomplete(t *testing.T) {
 				"echo.EchoService",
 				"stream",
 			},
-			want: []string{
-				"ClientStream",
-				"ServerStream",
-				"BidiStream",
-			},
+			want: []string{},
 		},
 	}
 

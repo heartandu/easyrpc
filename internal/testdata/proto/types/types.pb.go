@@ -2,12 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v6.33.4
-// source: types.proto
+// source: types/types.proto
 
-package testdata
+package types
 
 import (
-	common "github.com/heartandu/easyrpc/internal/testdata/common"
+	common "github.com/heartandu/easyrpc/internal/testdata/proto/types/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -62,11 +62,11 @@ func (x Status) String() string {
 }
 
 func (Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_types_proto_enumTypes[0].Descriptor()
+	return file_types_types_proto_enumTypes[0].Descriptor()
 }
 
 func (Status) Type() protoreflect.EnumType {
-	return &file_types_proto_enumTypes[0]
+	return &file_types_types_proto_enumTypes[0]
 }
 
 func (x Status) Number() protoreflect.EnumNumber {
@@ -75,7 +75,7 @@ func (x Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Status.Descriptor instead.
 func (Status) EnumDescriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{0}
+	return file_types_types_proto_rawDescGZIP(), []int{0}
 }
 
 type Priority int32
@@ -114,11 +114,11 @@ func (x Priority) String() string {
 }
 
 func (Priority) Descriptor() protoreflect.EnumDescriptor {
-	return file_types_proto_enumTypes[1].Descriptor()
+	return file_types_types_proto_enumTypes[1].Descriptor()
 }
 
 func (Priority) Type() protoreflect.EnumType {
-	return &file_types_proto_enumTypes[1]
+	return &file_types_types_proto_enumTypes[1]
 }
 
 func (x Priority) Number() protoreflect.EnumNumber {
@@ -127,7 +127,7 @@ func (x Priority) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Priority.Descriptor instead.
 func (Priority) EnumDescriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{1}
+	return file_types_types_proto_rawDescGZIP(), []int{1}
 }
 
 // Scalar types - all protobuf scalar types
@@ -154,7 +154,7 @@ type ScalarTypes struct {
 
 func (x *ScalarTypes) Reset() {
 	*x = ScalarTypes{}
-	mi := &file_types_proto_msgTypes[0]
+	mi := &file_types_types_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -166,7 +166,7 @@ func (x *ScalarTypes) String() string {
 func (*ScalarTypes) ProtoMessage() {}
 
 func (x *ScalarTypes) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[0]
+	mi := &file_types_types_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -179,7 +179,7 @@ func (x *ScalarTypes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScalarTypes.ProtoReflect.Descriptor instead.
 func (*ScalarTypes) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{0}
+	return file_types_types_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ScalarTypes) GetDoubleField() float64 {
@@ -297,7 +297,7 @@ type EnumTypes struct {
 
 func (x *EnumTypes) Reset() {
 	*x = EnumTypes{}
-	mi := &file_types_proto_msgTypes[1]
+	mi := &file_types_types_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -309,7 +309,7 @@ func (x *EnumTypes) String() string {
 func (*EnumTypes) ProtoMessage() {}
 
 func (x *EnumTypes) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[1]
+	mi := &file_types_types_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -322,7 +322,7 @@ func (x *EnumTypes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnumTypes.ProtoReflect.Descriptor instead.
 func (*EnumTypes) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{1}
+	return file_types_types_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *EnumTypes) GetStatus() Status {
@@ -352,7 +352,7 @@ type Maps struct {
 
 func (x *Maps) Reset() {
 	*x = Maps{}
-	mi := &file_types_proto_msgTypes[2]
+	mi := &file_types_types_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -364,7 +364,7 @@ func (x *Maps) String() string {
 func (*Maps) ProtoMessage() {}
 
 func (x *Maps) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[2]
+	mi := &file_types_types_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -377,7 +377,7 @@ func (x *Maps) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Maps.ProtoReflect.Descriptor instead.
 func (*Maps) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{2}
+	return file_types_types_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Maps) GetStringToInt() map[string]int32 {
@@ -424,7 +424,7 @@ type Oneof struct {
 
 func (x *Oneof) Reset() {
 	*x = Oneof{}
-	mi := &file_types_proto_msgTypes[3]
+	mi := &file_types_types_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -436,7 +436,7 @@ func (x *Oneof) String() string {
 func (*Oneof) ProtoMessage() {}
 
 func (x *Oneof) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[3]
+	mi := &file_types_types_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -449,7 +449,7 @@ func (x *Oneof) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Oneof.ProtoReflect.Descriptor instead.
 func (*Oneof) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{3}
+	return file_types_types_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Oneof) GetChoice() isOneof_Choice {
@@ -533,7 +533,7 @@ type Imported struct {
 
 func (x *Imported) Reset() {
 	*x = Imported{}
-	mi := &file_types_proto_msgTypes[4]
+	mi := &file_types_types_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -545,7 +545,7 @@ func (x *Imported) String() string {
 func (*Imported) ProtoMessage() {}
 
 func (x *Imported) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[4]
+	mi := &file_types_types_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -558,7 +558,7 @@ func (x *Imported) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Imported.ProtoReflect.Descriptor instead.
 func (*Imported) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{4}
+	return file_types_types_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Imported) GetImported() *common.Imported {
@@ -580,7 +580,7 @@ type RecursiveNode struct {
 
 func (x *RecursiveNode) Reset() {
 	*x = RecursiveNode{}
-	mi := &file_types_proto_msgTypes[5]
+	mi := &file_types_types_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -592,7 +592,7 @@ func (x *RecursiveNode) String() string {
 func (*RecursiveNode) ProtoMessage() {}
 
 func (x *RecursiveNode) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[5]
+	mi := &file_types_types_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -605,7 +605,7 @@ func (x *RecursiveNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecursiveNode.ProtoReflect.Descriptor instead.
 func (*RecursiveNode) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{5}
+	return file_types_types_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *RecursiveNode) GetValue() string {
@@ -638,7 +638,7 @@ type Recursive struct {
 
 func (x *Recursive) Reset() {
 	*x = Recursive{}
-	mi := &file_types_proto_msgTypes[6]
+	mi := &file_types_types_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -650,7 +650,7 @@ func (x *Recursive) String() string {
 func (*Recursive) ProtoMessage() {}
 
 func (x *Recursive) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[6]
+	mi := &file_types_types_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -663,7 +663,7 @@ func (x *Recursive) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Recursive.ProtoReflect.Descriptor instead.
 func (*Recursive) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{6}
+	return file_types_types_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Recursive) GetNode() *RecursiveNode {
@@ -687,7 +687,7 @@ type Optional struct {
 
 func (x *Optional) Reset() {
 	*x = Optional{}
-	mi := &file_types_proto_msgTypes[7]
+	mi := &file_types_types_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -699,7 +699,7 @@ func (x *Optional) String() string {
 func (*Optional) ProtoMessage() {}
 
 func (x *Optional) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[7]
+	mi := &file_types_types_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -712,7 +712,7 @@ func (x *Optional) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Optional.ProtoReflect.Descriptor instead.
 func (*Optional) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{7}
+	return file_types_types_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Optional) GetOptionalString() string {
@@ -766,7 +766,7 @@ type Repeated struct {
 
 func (x *Repeated) Reset() {
 	*x = Repeated{}
-	mi := &file_types_proto_msgTypes[8]
+	mi := &file_types_types_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -778,7 +778,7 @@ func (x *Repeated) String() string {
 func (*Repeated) ProtoMessage() {}
 
 func (x *Repeated) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[8]
+	mi := &file_types_types_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -791,7 +791,7 @@ func (x *Repeated) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Repeated.ProtoReflect.Descriptor instead.
 func (*Repeated) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{8}
+	return file_types_types_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Repeated) GetStrings() []string {
@@ -852,7 +852,7 @@ type Maps_Inner struct {
 
 func (x *Maps_Inner) Reset() {
 	*x = Maps_Inner{}
-	mi := &file_types_proto_msgTypes[9]
+	mi := &file_types_types_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -864,7 +864,7 @@ func (x *Maps_Inner) String() string {
 func (*Maps_Inner) ProtoMessage() {}
 
 func (x *Maps_Inner) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[9]
+	mi := &file_types_types_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -877,7 +877,7 @@ func (x *Maps_Inner) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Maps_Inner.ProtoReflect.Descriptor instead.
 func (*Maps_Inner) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{2, 0}
+	return file_types_types_proto_rawDescGZIP(), []int{2, 0}
 }
 
 func (x *Maps_Inner) GetId() uint64 {
@@ -896,7 +896,7 @@ type Oneof_Inner struct {
 
 func (x *Oneof_Inner) Reset() {
 	*x = Oneof_Inner{}
-	mi := &file_types_proto_msgTypes[14]
+	mi := &file_types_types_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -908,7 +908,7 @@ func (x *Oneof_Inner) String() string {
 func (*Oneof_Inner) ProtoMessage() {}
 
 func (x *Oneof_Inner) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[14]
+	mi := &file_types_types_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -921,7 +921,7 @@ func (x *Oneof_Inner) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Oneof_Inner.ProtoReflect.Descriptor instead.
 func (*Oneof_Inner) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{3, 0}
+	return file_types_types_proto_rawDescGZIP(), []int{3, 0}
 }
 
 func (x *Oneof_Inner) GetId() uint64 {
@@ -940,7 +940,7 @@ type Optional_Inner struct {
 
 func (x *Optional_Inner) Reset() {
 	*x = Optional_Inner{}
-	mi := &file_types_proto_msgTypes[15]
+	mi := &file_types_types_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -952,7 +952,7 @@ func (x *Optional_Inner) String() string {
 func (*Optional_Inner) ProtoMessage() {}
 
 func (x *Optional_Inner) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[15]
+	mi := &file_types_types_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -965,7 +965,7 @@ func (x *Optional_Inner) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Optional_Inner.ProtoReflect.Descriptor instead.
 func (*Optional_Inner) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{7, 0}
+	return file_types_types_proto_rawDescGZIP(), []int{7, 0}
 }
 
 func (x *Optional_Inner) GetId() uint64 {
@@ -984,7 +984,7 @@ type Repeated_Inner struct {
 
 func (x *Repeated_Inner) Reset() {
 	*x = Repeated_Inner{}
-	mi := &file_types_proto_msgTypes[16]
+	mi := &file_types_types_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -996,7 +996,7 @@ func (x *Repeated_Inner) String() string {
 func (*Repeated_Inner) ProtoMessage() {}
 
 func (x *Repeated_Inner) ProtoReflect() protoreflect.Message {
-	mi := &file_types_proto_msgTypes[16]
+	mi := &file_types_types_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1009,7 +1009,7 @@ func (x *Repeated_Inner) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Repeated_Inner.ProtoReflect.Descriptor instead.
 func (*Repeated_Inner) Descriptor() ([]byte, []int) {
-	return file_types_proto_rawDescGZIP(), []int{8, 0}
+	return file_types_types_proto_rawDescGZIP(), []int{8, 0}
 }
 
 func (x *Repeated_Inner) GetId() uint64 {
@@ -1019,11 +1019,11 @@ func (x *Repeated_Inner) GetId() uint64 {
 	return 0
 }
 
-var File_types_proto protoreflect.FileDescriptor
+var File_types_types_proto protoreflect.FileDescriptor
 
-const file_types_proto_rawDesc = "" +
+const file_types_types_proto_rawDesc = "" +
 	"\n" +
-	"\vtypes.proto\x12\x05types\x1a\x13common/common.proto\"\x9a\x04\n" +
+	"\x11types/types.proto\x12\x05types\x1a\x19types/common/common.proto\"\x9a\x04\n" +
 	"\vScalarTypes\x12!\n" +
 	"\fdouble_field\x18\x01 \x01(\x01R\vdoubleField\x12\x1f\n" +
 	"\vfloat_field\x18\x02 \x01(\x02R\n" +
@@ -1130,23 +1130,23 @@ const file_types_proto_rawDesc = "" +
 	"\bImported\x12\x0f.types.Imported\x1a\x0f.types.Imported\x12/\n" +
 	"\tRecursive\x12\x10.types.Recursive\x1a\x10.types.Recursive\x12,\n" +
 	"\bOptional\x12\x0f.types.Optional\x1a\x0f.types.Optional\x12,\n" +
-	"\bRepeated\x12\x0f.types.Repeated\x1a\x0f.types.RepeatedB0Z.github.com/heartandu/easyrpc/internal/testdatab\x06proto3"
+	"\bRepeated\x12\x0f.types.Repeated\x1a\x0f.types.RepeatedB<Z:github.com/heartandu/easyrpc/internal/testdata/proto/typesb\x06proto3"
 
 var (
-	file_types_proto_rawDescOnce sync.Once
-	file_types_proto_rawDescData []byte
+	file_types_types_proto_rawDescOnce sync.Once
+	file_types_types_proto_rawDescData []byte
 )
 
-func file_types_proto_rawDescGZIP() []byte {
-	file_types_proto_rawDescOnce.Do(func() {
-		file_types_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_types_proto_rawDesc), len(file_types_proto_rawDesc)))
+func file_types_types_proto_rawDescGZIP() []byte {
+	file_types_types_proto_rawDescOnce.Do(func() {
+		file_types_types_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_types_types_proto_rawDesc), len(file_types_types_proto_rawDesc)))
 	})
-	return file_types_proto_rawDescData
+	return file_types_types_proto_rawDescData
 }
 
-var file_types_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_types_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
-var file_types_proto_goTypes = []any{
+var file_types_types_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_types_types_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_types_types_proto_goTypes = []any{
 	(Status)(0),             // 0: types.Status
 	(Priority)(0),           // 1: types.Priority
 	(*ScalarTypes)(nil),     // 2: types.ScalarTypes
@@ -1168,7 +1168,7 @@ var file_types_proto_goTypes = []any{
 	(*Repeated_Inner)(nil),  // 18: types.Repeated.Inner
 	(*common.Imported)(nil), // 19: types.common.Imported
 }
-var file_types_proto_depIdxs = []int32{
+var file_types_types_proto_depIdxs = []int32{
 	0,  // 0: types.EnumTypes.status:type_name -> types.Status
 	1,  // 1: types.EnumTypes.priority:type_name -> types.Priority
 	12, // 2: types.Maps.string_to_int:type_name -> types.Maps.StringToIntEntry
@@ -1208,34 +1208,34 @@ var file_types_proto_depIdxs = []int32{
 	0,  // [0:16] is the sub-list for field type_name
 }
 
-func init() { file_types_proto_init() }
-func file_types_proto_init() {
-	if File_types_proto != nil {
+func init() { file_types_types_proto_init() }
+func file_types_types_proto_init() {
+	if File_types_types_proto != nil {
 		return
 	}
-	file_types_proto_msgTypes[3].OneofWrappers = []any{
+	file_types_types_proto_msgTypes[3].OneofWrappers = []any{
 		(*Oneof_Text)(nil),
 		(*Oneof_Number)(nil),
 		(*Oneof_Flag)(nil),
 		(*Oneof_Inner_)(nil),
 	}
-	file_types_proto_msgTypes[7].OneofWrappers = []any{}
+	file_types_types_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_types_proto_rawDesc), len(file_types_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_types_types_proto_rawDesc), len(file_types_types_proto_rawDesc)),
 			NumEnums:      2,
 			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_types_proto_goTypes,
-		DependencyIndexes: file_types_proto_depIdxs,
-		EnumInfos:         file_types_proto_enumTypes,
-		MessageInfos:      file_types_proto_msgTypes,
+		GoTypes:           file_types_types_proto_goTypes,
+		DependencyIndexes: file_types_types_proto_depIdxs,
+		EnumInfos:         file_types_types_proto_enumTypes,
+		MessageInfos:      file_types_types_proto_msgTypes,
 	}.Build()
-	File_types_proto = out.File
-	file_types_proto_goTypes = nil
-	file_types_proto_depIdxs = nil
+	File_types_types_proto = out.File
+	file_types_types_proto_goTypes = nil
+	file_types_types_proto_depIdxs = nil
 }

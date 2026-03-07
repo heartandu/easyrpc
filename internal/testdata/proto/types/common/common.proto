@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package types.common;
 
-option go_package = "github.com/heartandu/easyrpc/internal/testdata/common";
+option go_package = "github.com/heartandu/easyrpc/internal/testdata/proto/types/common";
 
 // Imported message shared across services
 message Imported {
