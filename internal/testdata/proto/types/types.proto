@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package types;
 
-option go_package = "github.com/heartandu/easyrpc/internal/testdata";
+option go_package = "github.com/heartandu/easyrpc/internal/testdata/proto/types";
 
-import "common/common.proto";
+import "types/common/common.proto";
 
 service TypesService {
   rpc ScalarTypes(types.ScalarTypes) returns (types.ScalarTypes);

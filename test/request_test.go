@@ -301,6 +301,32 @@ func TestRequest(t *testing.T) {
 			want: []map[string]any{{"msg": "package flag"}},
 		},
 		{
+			name: "service flag specified",
+			args: []string{
+				"Now",
+				"-a",
+				address(insecureSocket),
+				"-r",
+				"--service",
+				"TimeService",
+			},
+			want: []map[string]any{{}},
+		},
+		{
+			name: "service flag specified (/EchoService/Echo)",
+			args: []string{
+				"Echo",
+				"-a",
+				address(insecureSocket),
+				"-d",
+				`{"msg":"service flag"}`,
+				"-r",
+				"--service",
+				"EchoService",
+			},
+			want: []map[string]any{{"msg": "service flag"}},
+		},
+		{
 			name: "package and service flag specified",
 			args: []string{
 				"Echo",
@@ -517,7 +543,7 @@ func TestRequest_ErrorCases(t *testing.T) {
 				address(insecureSocket),
 				"-r",
 			},
-			wantErr: "Symbol not found: ..UnknownMethod",
+			wantErr: "Symbol not found: UnknownMethod",
 		},
 		{
 			name: "both data and file flags specified",

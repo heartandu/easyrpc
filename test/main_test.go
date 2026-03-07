@@ -16,7 +16,9 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/heartandu/easyrpc/internal/testdata"
+	"github.com/heartandu/easyrpc/internal/testdata/proto"
+	"github.com/heartandu/easyrpc/internal/testdata/proto/echo"
+	"github.com/heartandu/easyrpc/internal/testdata/proto/types"
 	"github.com/heartandu/easyrpc/pkg/tlsconf"
 )
 
@@ -31,8 +33,8 @@ const (
 	cert   = "../internal/testdata/localhost.crt"
 	key    = "../internal/testdata/localhost.key"
 
-	importPath = "../internal/testdata"
-	protoFile  = "test.proto"
+	importPath = "../internal/testdata/proto"
+	protoFile  = "echo/echo.proto"
 )
 
 func TestMain(m *testing.M) {
@@ -82,8 +84,13 @@ func runTest(m *testing.M) (int, error) {
 
 func newServer(opts ...grpc.ServerOption) *grpc.Server {
 	s := grpc.NewServer(opts...)
-	testdata.RegisterEchoServiceServer(s, &server{})
-	testdata.RegisterTypesServiceServer(s, &server{})
+	serverImpl := &server{}
+	packagelessServerImpl := &packagelessServer{}
+
+	echo.RegisterEchoServiceServer(s, serverImpl)
+	types.RegisterTypesServiceServer(s, serverImpl)
+	proto.RegisterTimeServiceServer(s, packagelessServerImpl)
+	proto.RegisterEchoServiceServer(s, packagelessServerImpl)
 	reflection.Register(s)
 
 	return s

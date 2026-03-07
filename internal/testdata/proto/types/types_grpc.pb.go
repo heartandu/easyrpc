@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.0
 // - protoc             v6.33.4
-// source: types.proto
+// source: types/types.proto
 
-package testdata
+package types
 
 import (
 	context "context"
@@ -383,5 +383,5 @@ var TypesService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "types.proto",
+	Metadata: "types/types.proto",
 }

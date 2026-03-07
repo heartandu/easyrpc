@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "github.com/heartandu/easyrpc/internal/testdata/proto";
+
+service TimeService {
+  rpc Now(NowRequest) returns (NowResponse) {}
+}
+
+message NowRequest {}
+
+message NowResponse {
+  int64 timestamp = 1;
+}
+
+service EchoService {
+  rpc Echo(EchoRequest) returns (EchoResponse) {}
+}
+
+message EchoRequest {
+  string msg = 1;
+}
+
+message EchoResponse {
+  string msg = 1;
+}

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package echo;
 
-option go_package = "github.com/heartandu/easyrpc/internal/testdata";
+option go_package = "github.com/heartandu/easyrpc/internal/testdata/proto/echo";
 
 service EchoService {
   rpc Echo(EchoRequest) returns (EchoResponse) {}

@@ -185,16 +185,16 @@ func TestServiceFlagCompletion(t *testing.T) {
 		{
 			name: "empty flag without package flag",
 			args: []string{"--config", conf, "--service", ""},
-			want: []string{"echo.EchoService"},
+			want: []string{"EchoService"},
 		},
 		{
 			name: "empty flag without package flag using reflect",
 			args: []string{"--config", reflectConf, "--service", ""},
 			want: []string{
-				"echo.EchoService",
-				"grpc.reflection.v1.ServerReflection",
-				"grpc.reflection.v1alpha.ServerReflection",
-				"types.TypesService",
+				"TimeService",
+				"EchoService",
+				"ServerReflection",
+				"TypesService",
 			},
 		},
 		{
@@ -204,11 +204,8 @@ func TestServiceFlagCompletion(t *testing.T) {
 		},
 		{
 			name: "partial completion",
-			args: []string{"--config", reflectConf, "--service", "Server"},
-			want: []string{
-				"grpc.reflection.v1.ServerReflection",
-				"grpc.reflection.v1alpha.ServerReflection",
-			},
+			args: []string{"--config", reflectConf, "--service", "server"},
+			want: []string{"ServerReflection"},
 		},
 	}
 	for _, tt := range tests {
