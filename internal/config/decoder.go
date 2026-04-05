@@ -23,6 +23,7 @@ var (
 	ErrGetBoolFailed        = errors.New("failed to get bool flag value")
 	ErrGetStringSliceFailed = errors.New("failed to get string slice flag value")
 	ErrGetStringFailed      = errors.New("failed to get string flag value")
+	ErrInvalidYAML          = errors.New("failed to decode config file")
 )
 
 // Decoder decodes configuration from files and command-line flags.
@@ -87,7 +88,7 @@ func (d *Decoder) readFile(name string) (map[string]any, error) {
 
 	fileMap := make(map[string]any)
 	if err := yaml.NewDecoder(f).Decode(&fileMap); err != nil {
-		return nil, fmt.Errorf("failed to decode config file %s: %w", name, err)
+		return nil, fmt.Errorf("%w %s: %w", ErrInvalidYAML, name, err)
 	}
 
 	return fileMap, nil

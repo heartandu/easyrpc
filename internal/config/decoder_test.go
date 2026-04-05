@@ -52,7 +52,7 @@ func TestDecoder_Decode(t *testing.T) {
 		setupFs   func(afero.Fs)
 		flagSetup func(*cobra.Command)
 		want      config.Config
-		wantErr   bool
+		wantErr   error
 	}{
 		{
 			name:  "all configuration values from file",
@@ -108,7 +108,7 @@ service: TestService
 					Service: "TestService",
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name:  "all configuration values from flags",
@@ -160,7 +160,7 @@ service: TestService
 					Service: "TestService",
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name:      "no config files",
@@ -168,7 +168,7 @@ service: TestService
 			setupFs:   nil,
 			flagSetup: nil,
 			want:      config.Config{},
-			wantErr:   false,
+			wantErr:   nil,
 		},
 		{
 			name:      "config file not found is skipped",
@@ -176,7 +176,7 @@ service: TestService
 			setupFs:   nil,
 			flagSetup: nil,
 			want:      config.Config{},
-			wantErr:   false,
+			wantErr:   nil,
 		},
 		{
 			name:  "invalid yaml syntax",
@@ -191,7 +191,7 @@ invalid yaml: [:
 			},
 			flagSetup: nil,
 			want:      config.Config{},
-			wantErr:   true,
+			wantErr:   config.ErrInvalidYAML,
 		},
 		{
 			name:  "multiple config files merged",
@@ -210,6 +210,7 @@ metadata:
   key1: value1
   key2: value2
 `
+
 				require.NoError(t, afero.WriteFile(fs, "config1.yaml", []byte(content1), 0o644))
 				require.NoError(t, afero.WriteFile(fs, "config2.yaml", []byte(content2), 0o644))
 			},
@@ -227,13 +228,15 @@ metadata:
 					Metadata: map[string]string{"key1": "value1", "key2": "value2"},
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name:  "flags override config file values",
 			files: []string{"config.yaml"},
 			setupFs: func(fs afero.Fs) {
 				content := `
+import_paths:
+  - proto
 address: localhost:8080
 reflection: true
 tls: false
@@ -241,10 +244,16 @@ tls: false
 				require.NoError(t, afero.WriteFile(fs, "config.yaml", []byte(content), 0o644))
 			},
 			flagSetup: func(cmd *cobra.Command) {
+				require.NoError(t, cmd.PersistentFlags().Set("import-path", "overwritten"))
 				require.NoError(t, cmd.PersistentFlags().Set("address", "localhost:9090"))
 				require.NoError(t, cmd.PersistentFlags().Set("tls", "true"))
 			},
 			want: config.Config{
+				Proto: config.Proto{
+					ImportPaths: []string{
+						"overwritten", // From flag
+					},
+				},
 				Server: config.Server{
 					Address:    "localhost:9090", // From flag
 					Reflection: true,             // From file
@@ -253,7 +262,7 @@ tls: false
 					Enabled: true, // From flag, overrides file
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name:  "nested map merge",
@@ -269,6 +278,7 @@ metadata:
   key2: overwritten
   key3: value3
 `
+
 				require.NoError(t, afero.WriteFile(fs, "config1.yaml", []byte(content1), 0o644))
 				require.NoError(t, afero.WriteFile(fs, "config2.yaml", []byte(content2), 0o644))
 			},
@@ -284,7 +294,7 @@ metadata:
 					},
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name:  "empty yaml file returns error",
@@ -294,7 +304,7 @@ metadata:
 			},
 			flagSetup: nil,
 			want:      config.Config{},
-			wantErr:   true,
+			wantErr:   config.ErrInvalidYAML,
 		},
 	}
 
@@ -317,8 +327,8 @@ metadata:
 			decoder := config.NewDecoder(fs, cmd, tt.files)
 			got, err := decoder.Decode()
 
-			if tt.wantErr {
-				require.Error(t, err)
+			if tt.wantErr != nil {
+				require.ErrorIs(t, err, tt.wantErr)
 
 				return
 			}
