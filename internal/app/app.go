@@ -1,17 +1,14 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 
 	"github.com/heartandu/easyrpc/internal/autocomplete"
 	"github.com/heartandu/easyrpc/internal/config"
@@ -45,7 +42,6 @@ type App struct {
 
 	fs     afero.Fs
 	cmd    *cobra.Command
-	viper  *viper.Viper
 	pflags *pflag.FlagSet
 }
 
@@ -63,7 +59,6 @@ The main purpose of this utility is for manual API testing.`,
 		version: version,
 		fs:      afero.NewOsFs(),
 		cmd:     cmd,
-		viper:   viper.New(),
 		pflags:  cmd.PersistentFlags(),
 	}
 }
@@ -80,16 +75,13 @@ func (a *App) SetInput(r io.Reader) {
 }
 
 // SetFs sets a filesystem wrapper.
-func (a *App) SetFs(fs afero.Fs) { //nolint:gocritic,revive // The scope is small enough to afford such shadowing.
+func (a *App) SetFs(fs afero.Fs) {
 	a.fs = fs
-	a.viper.SetFs(fs)
 }
 
 // Run sets up an application and executes the command.
 func (a *App) Run() error {
 	a.bindPFlags()
-	a.bindPFlagsToConfig()
-	a.bindEnv()
 	a.registerCommands()
 
 	cobra.OnInitialize(a.onInit)
@@ -128,28 +120,12 @@ func (a *App) bindPFlags() {
 	a.cmd.RegisterFlagCompletionFunc(flagPackage, protoCompletion.CompletePackage)
 	a.pflags.String(flagService, "", "the service name to use as default")
 	a.cmd.RegisterFlagCompletionFunc(flagService, protoCompletion.CompleteService)
-	a.pflags.StringToStringP(flagMetadata, "H", nil, "default headers that are attached to every request")
-}
-
-// bindPFlagsToConfig binds application global flags to configuration structure.
-func (a *App) bindPFlagsToConfig() {
-	a.viper.BindPFlag("cacert", a.pflags.Lookup(flagCACert))
-	a.viper.BindPFlag("cert", a.pflags.Lookup(flagCert))
-	a.viper.BindPFlag("key", a.pflags.Lookup(flagKey))
-	a.viper.BindPFlag("address", a.pflags.Lookup(flagAddress))
-	a.viper.BindPFlag("reflection", a.pflags.Lookup(flagReflection))
-	a.viper.BindPFlag("web", a.pflags.Lookup(flagWeb))
-	a.viper.BindPFlag("tls", a.pflags.Lookup(flagTLS))
-	a.viper.BindPFlag("import_paths", a.pflags.Lookup(flagImportPath))
-	a.viper.BindPFlag("import_all", a.pflags.Lookup(flagImportAll))
-	a.viper.BindPFlag("proto_files", a.pflags.Lookup(flagProtoFile))
-	a.viper.BindPFlag("package", a.pflags.Lookup(flagPackage))
-	a.viper.BindPFlag("service", a.pflags.Lookup(flagService))
-	a.viper.BindPFlag("metadata", a.pflags.Lookup(flagMetadata))
-}
-
-func (a *App) bindEnv() {
-	a.viper.BindEnv("editor")
+	a.pflags.StringSliceP(
+		flagMetadata,
+		"H",
+		nil,
+		`metadata (headers) that are attached to every request in format "key: value"`,
+	)
 }
 
 // registerCommands adds all application commands to the root one.
@@ -175,9 +151,6 @@ func (a *App) readConfig() (config.Config, error) {
 		return config.Config{}, fmt.Errorf("failedt to read user home directory: %w", err)
 	}
 
-	a.viper.SetEnvPrefix("easyrpc")
-	a.viper.AutomaticEnv() // read in environment variables that match
-
 	files := []string{
 		path.Join(home, defaultConfigName),
 		path.Join(".", defaultConfigName),
@@ -188,23 +161,9 @@ func (a *App) readConfig() (config.Config, error) {
 		files = append(files, a.cfgFile)
 	}
 
-	var (
-		notFoundErr viper.ConfigFileNotFoundError
-		fsErr       *fs.PathError
-	)
-
-	for _, file := range files {
-		a.viper.SetConfigFile(file)
-
-		if err := a.viper.MergeInConfig(); err != nil && !errors.As(err, &notFoundErr) && !errors.As(err, &fsErr) {
-			return config.Config{}, fmt.Errorf("failed to read config: %w", err)
-		}
-	}
-
-	var cfg config.Config
-
-	if err := a.viper.Unmarshal(&cfg); err != nil {
-		return config.Config{}, fmt.Errorf("failed to unmarshal config: %w", err)
+	cfg, err := config.NewDecoder(a.fs, a.cmd, files).Decode()
+	if err != nil {
+		return config.Config{}, fmt.Errorf("failed to decode config: %w", err)
 	}
 
 	return cfg, nil

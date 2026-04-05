@@ -157,10 +157,10 @@ You can provide metadata to send with the request.
 
 ```shell
 # Single header
-$ easyrpc c -a localhost:12345 -r example.package.Service.Method -H 'Authorization=Bearer token'
+$ easyrpc c -a localhost:12345 -r example.package.Service.Method -H 'Authorization: Bearer token'
 
 # Multiple headers
-$ easyrpc c -a localhost:12345 -r example.package.Service.Method -H 'Authorization=Bearer token' -H 'X-Real-Ip=0.0.0.0'
+$ easyrpc c -a localhost:12345 -r example.package.Service.Method -H 'Authorization: Bearer token' -H 'X-Real-Ip: 0.0.0.0'
 ```
 
 ### Input data
@@ -207,8 +207,7 @@ $ easyrpc r -i path/to/proto -p example.proto -o request.json example.package.Se
 ### Edit request before call/printout
 
 You can edit the request data before call or request printout. The editor can be set in the `EDITOR` environment
-variable or in the `editor: ""` [configuration file](#configuration-files) field. If no editor has been set, the system
-default will be used instead.
+variable. If no editor has been set, the system default will be used instead.
 
 > [!NOTE]
 > If you're using a GUI editor, make sure to use `--wait` or `-w` flag if the editor supports it. This way the command
@@ -320,6 +319,10 @@ The precedence of the locations is as follows:
 - Configuration file from `--config` flag
 - `./.easyrpc.yaml`
 - `$HOME/.easyrpc.yaml`
+
+Most flags are replaced by values from higher precedence locations, except for metadata.
+Metadata values are merged individually by key, allowing you to set common values in a configuration file
+while overriding dynamic ones from flags.
 
 You can initialize the configuration with empty values in the current working directory by running `easyrpc config init`.
 If you want to inspect the resulting configuration that will be used by `easyrpc`, run `easyrpc config dump`.
