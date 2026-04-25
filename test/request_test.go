@@ -81,6 +81,12 @@ func TestRequest(t *testing.T) {
         web: true`)
 	require.NoError(t, err, "failed to create web TLS config file")
 
+	mixedCasingConfigFileName, err := createTempFile(fs, "mixed_casing.yaml", `
+        import_Paths:
+          - `+importPath+`
+        IMPORT_ALL: true`)
+	require.NoError(t, err, "failed to create proto import all config file")
+
 	tests := []struct {
 		name string
 		args []string
@@ -240,6 +246,17 @@ func TestRequest(t *testing.T) {
 				`{"msg":"reflection config"}`,
 			},
 			want: []map[string]any{{"msg": "reflection config"}},
+		},
+		{
+			name: "using mixed casing config",
+			args: []string{
+				"echo.EchoService.Echo",
+				"--config",
+				mixedCasingConfigFileName,
+				"-d",
+				`{"msg":"mixed casing config"}`,
+			},
+			want: []map[string]any{{"msg": "mixed casing config"}},
 		},
 		{
 			name: "tls with only root certificate",

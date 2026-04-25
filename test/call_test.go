@@ -90,6 +90,13 @@ func TestCall(t *testing.T) {
         web: true`)
 	require.NoError(t, err, "failed to create metadata config file")
 
+	mixedCasingConfigFileName, err := createTempFile(fs, "mixed_casing.yaml", `
+        AddreSS: `+address(insecureSocket)+`
+        import_Paths:
+          - `+importPath+`
+        IMPORT_ALL: true`)
+	require.NoError(t, err, "failed to create proto import all config file")
+
 	tests := []struct {
 		name string
 		args []string
@@ -246,6 +253,17 @@ func TestCall(t *testing.T) {
 			},
 			want: []map[string]any{{"msg": "reflection config"}},
 		},
+		{
+			name: "using mixed casing keys in config",
+			args: []string{
+				"echo.EchoService.Echo",
+				"--config",
+				mixedCasingConfigFileName,
+				"-d",
+				`{"msg":"mixed casing config"}`,
+			},
+			want: []map[string]any{{"msg": "mixed casing config"}},
+		},
 
 		{
 			name: "tls with only root certificate",
@@ -397,6 +415,19 @@ func TestCall(t *testing.T) {
 				`{"msg":"md flag"}`,
 				"-H",
 				"test: overwritten",
+			},
+			want: []map[string]any{{"msg": "md flag\noverwritten"}},
+		},
+		{
+			name: "with metadata mixed casing",
+			args: []string{
+				"echo.EchoService.Echo",
+				"--config",
+				mdConfigFileName,
+				"-d",
+				`{"msg":"md flag"}`,
+				"-H",
+				"Test: overwritten",
 			},
 			want: []map[string]any{{"msg": "md flag\noverwritten"}},
 		},

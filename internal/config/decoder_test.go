@@ -101,8 +101,8 @@ service: TestService
 				},
 				Request: config.Request{
 					Metadata: map[string]string{
-						"Authorization":   "Bearer token",
-						"X-Custom-Header": "custom-value",
+						"authorization":   "Bearer token",
+						"x-custom-header": "custom-value",
 					},
 					Package: "test.v1",
 					Service: "TestService",
@@ -129,8 +129,8 @@ service: TestService
 				require.NoError(t, cmd.PersistentFlags().Set("cacert", "/path/to/ca.crt"))
 				require.NoError(t, cmd.PersistentFlags().Set("cert", "/path/to/client.crt"))
 				require.NoError(t, cmd.PersistentFlags().Set("key", "/path/to/client.key"))
-				require.NoError(t, cmd.PersistentFlags().Set("metadata", "Authorization: Bearer token"))
-				require.NoError(t, cmd.PersistentFlags().Set("metadata", "X-Custom-Header: custom-value"))
+				require.NoError(t, cmd.PersistentFlags().Set("metadata", "authorization: Bearer token"))
+				require.NoError(t, cmd.PersistentFlags().Set("metadata", "x-custom-header: custom-value"))
 				require.NoError(t, cmd.PersistentFlags().Set("package", "test.v1"))
 				require.NoError(t, cmd.PersistentFlags().Set("service", "TestService"))
 			},
@@ -153,8 +153,8 @@ service: TestService
 				},
 				Request: config.Request{
 					Metadata: map[string]string{
-						"Authorization":   "Bearer token",
-						"X-Custom-Header": "custom-value",
+						"authorization":   "Bearer token",
+						"x-custom-header": "custom-value",
 					},
 					Package: "test.v1",
 					Service: "TestService",
@@ -305,6 +305,112 @@ metadata:
 			flagSetup: nil,
 			want:      config.Config{},
 			wantErr:   config.ErrInvalidYAML,
+		},
+		{
+			name:  "mixed case keys in single file",
+			files: []string{"config.yaml"},
+			setupFs: func(fs afero.Fs) {
+				content := `
+Import_Paths:
+  - /path/to/proto
+ADDRESS: localhost:8080
+Reflection: true
+METADATA:
+  Authorization: Bearer token
+  X-Custom-Header: custom-value
+`
+				require.NoError(t, afero.WriteFile(fs, "config.yaml", []byte(content), 0o644))
+			},
+			flagSetup: nil,
+			want: config.Config{
+				Proto: config.Proto{
+					ImportPaths: []string{"/path/to/proto"},
+				},
+				Server: config.Server{
+					Address:    "localhost:8080",
+					Reflection: true,
+				},
+				Request: config.Request{
+					Metadata: map[string]string{
+						"authorization":   "Bearer token",
+						"x-custom-header": "custom-value",
+					},
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:  "multiple config files with different casing merge",
+			files: []string{"config1.yaml", "config2.yaml"},
+			setupFs: func(fs afero.Fs) {
+				content1 := `
+import_paths:
+  - /path/to/proto
+address: localhost:8080
+`
+				content2 := `
+Import_Paths:
+  - /overwritten/path
+ADDRESS: localhost:9090
+metadata:
+  Key1: value1
+`
+
+				require.NoError(t, afero.WriteFile(fs, "config1.yaml", []byte(content1), 0o644))
+				require.NoError(t, afero.WriteFile(fs, "config2.yaml", []byte(content2), 0o644))
+			},
+			flagSetup: nil,
+			want: config.Config{
+				Proto: config.Proto{
+					ImportPaths: []string{"/overwritten/path"},
+				},
+				Server: config.Server{
+					Address: "localhost:9090",
+				},
+				Request: config.Request{
+					Metadata: map[string]string{
+						"key1": "value1",
+					},
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:  "mixed case keys overwritten by cli flags",
+			files: []string{"config.yaml"},
+			setupFs: func(fs afero.Fs) {
+				content := `
+Import_Paths:
+  - /path/to/proto
+ADDRESS: localhost:8080
+Reflection: true
+Metadata:
+  authorization: old-token
+  X-Custom-Header: old-value
+`
+				require.NoError(t, afero.WriteFile(fs, "config.yaml", []byte(content), 0o644))
+			},
+			flagSetup: func(cmd *cobra.Command) {
+				require.NoError(t, cmd.PersistentFlags().Set("address", "localhost:9090"))
+				require.NoError(t, cmd.PersistentFlags().Set("reflection", "false"))
+				require.NoError(t, cmd.PersistentFlags().Set("metadata", "Authorization: new-token"))
+			},
+			want: config.Config{
+				Proto: config.Proto{
+					ImportPaths: []string{"/path/to/proto"},
+				},
+				Server: config.Server{
+					Address:    "localhost:9090",
+					Reflection: false,
+				},
+				Request: config.Request{
+					Metadata: map[string]string{
+						"authorization":   "new-token",
+						"x-custom-header": "old-value",
+					},
+				},
+			},
+			wantErr: nil,
 		},
 	}
 
