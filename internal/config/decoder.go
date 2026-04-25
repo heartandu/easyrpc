@@ -96,11 +96,15 @@ func (d *Decoder) readFile(name string) (map[string]any, error) {
 
 func mergeMaps(dst, src map[string]any) {
 	for key, value := range src {
+		key = strings.ToLower(key)
+
 		if srcMap, ok := value.(map[string]any); ok {
 			if dstMap, ok := dst[key].(map[string]any); ok {
 				mergeMaps(dstMap, srcMap)
 			} else {
-				dst[key] = srcMap
+				normalized := make(map[string]any, len(srcMap))
+				mergeMaps(normalized, srcMap)
+				dst[key] = normalized
 			}
 		} else {
 			dst[key] = value
