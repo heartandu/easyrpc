@@ -5,7 +5,7 @@ go 1.24.6
 require (
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/go-viper/mapstructure/v2 v2.4.0
-	github.com/heartandu/grpc-web-go-client v0.0.0-20240914113410-f3d11955c59b
+	github.com/heartandu/grpc-web-go-client v0.0.0-20260707214405-91e50e7a60a7
 	github.com/heartandu/protoreflect-jsonschema v0.0.1
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/jhump/protoreflect v1.17.0
