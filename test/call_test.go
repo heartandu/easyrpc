@@ -501,6 +501,22 @@ func TestCall(t *testing.T) {
 			want: []map[string]any{{"msg": "web unary"}},
 		},
 		{
+			name: "web unary request with zero length response",
+			args: []string{
+				"echo.EchoService.Echo",
+				"-a",
+				address(insecureWebSocket),
+				"-w",
+				"-i",
+				importPath,
+				"-p",
+				protoFile,
+				"-d",
+				``,
+			},
+			want: []map[string]any{{"msg": ""}},
+		},
+		{
 			name: "web client streaming request",
 			args: []string{
 				"echo.EchoService.ClientStream",
