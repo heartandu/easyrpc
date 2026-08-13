@@ -64,6 +64,31 @@ func (mn FQMN) PartsBuilder() *FQMNBuilder {
 	return &FQMNBuilder{fqmn: &mn}
 }
 
+// FilterAndFormat formats the method name using the provided default package and service.
+// If a default is set, the corresponding part of the method must match it to be included;
+// matching parts are omitted from the output. Non-matching methods are filtered out.
+func (mn FQMN) FilterAndFormat(defaultPackage, defaultService string) (string, bool) {
+	if defaultPackage != "" && mn.PackageName != defaultPackage {
+		return "", false
+	}
+
+	if defaultService != "" && mn.Service != defaultService {
+		return "", false
+	}
+
+	builder := mn.PartsBuilder()
+
+	if defaultPackage == "" && mn.PackageName != "" {
+		builder.WithPackage()
+	}
+
+	if defaultService == "" {
+		builder.WithService()
+	}
+
+	return builder.String(), true
+}
+
 // FQMNBuilder builds fully qualified method name strings.
 // To maintain correctness:
 //   - if WithPackage is called and the service name is empty, only the method name is rendered

@@ -163,6 +163,112 @@ func TestParseFQMN(t *testing.T) {
 	}
 }
 
+func TestFQMN_FilterAndFormat(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		method         string
+		defaultPackage string
+		defaultService string
+		want           string
+		wantOK         bool
+	}{
+		{
+			name:   "no defaults, method only",
+			method: "Method",
+			want:   "Method",
+			wantOK: true,
+		},
+		{
+			name:   "no defaults, service and method",
+			method: "Service.Method",
+			want:   "Service.Method",
+			wantOK: true,
+		},
+		{
+			name:   "no defaults, fully qualified",
+			method: "test.v1.Service.Method",
+			want:   "test.v1.Service.Method",
+			wantOK: true,
+		},
+		{
+			name:           "package default matches",
+			method:         "test.v1.Service.Method",
+			defaultPackage: "test.v1",
+			want:           "Service.Method",
+			wantOK:         true,
+		},
+		{
+			name:           "package default does not match",
+			method:         "test.v1.Service.Method",
+			defaultPackage: "other.v1",
+			want:           "",
+			wantOK:         false,
+		},
+		{
+			name:           "service default matches",
+			method:         "test.v1.Service.Method",
+			defaultService: "Service",
+			want:           "test.v1.Service.Method",
+			wantOK:         true,
+		},
+		{
+			name:           "service default does not match",
+			method:         "test.v1.Service.Method",
+			defaultService: "Other",
+			want:           "",
+			wantOK:         false,
+		},
+		{
+			name:           "package and service defaults match",
+			method:         "test.v1.Service.Method",
+			defaultPackage: "test.v1",
+			defaultService: "Service",
+			want:           "Method",
+			wantOK:         true,
+		},
+		{
+			name:           "package default matches, service default does not",
+			method:         "test.v1.Service.Method",
+			defaultPackage: "test.v1",
+			defaultService: "Other",
+			want:           "",
+			wantOK:         false,
+		},
+		{
+			name:           "service default matches on packageless method",
+			method:         "Service.Method",
+			defaultService: "Service",
+			want:           "Method",
+			wantOK:         true,
+		},
+		{
+			name:           "packageless method with package default is filtered",
+			method:         "Service.Method",
+			defaultPackage: "test.v1",
+			want:           "",
+			wantOK:         false,
+		},
+		{
+			name:           "empty package and matching service name",
+			method:         "test.v1.Service.Method",
+			defaultService: "Service",
+			want:           "test.v1.Service.Method",
+			wantOK:         true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, ok := fqn.ParseFQMN(tt.method).FilterAndFormat(tt.defaultPackage, tt.defaultService)
+			require.Equal(t, tt.wantOK, ok)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestFQMNBuilder(t *testing.T) {
 	t.Parallel()
 
