@@ -250,6 +250,13 @@ func TestFQMN_FilterAndFormat(t *testing.T) {
 			want:           "",
 			wantOK:         false,
 		},
+		{
+			name:           "empty package and matching service name",
+			method:         "test.v1.Service.Method",
+			defaultService: "Service",
+			want:           "test.v1.Service.Method",
+			wantOK:         true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
