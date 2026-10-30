@@ -24,6 +24,7 @@ a more convenient tool for users.
   * [Input data](#input-data)
   * [Request data preparation](#request-data-preparation)
   * [Edit request before call/printout](#edit-request-before-callprintout)
+  * [Listing available RPCs](#listing-available-rpcs)
   * [Autocompletion](#autocompletion)
   * [Configuration files](#configuration-files)
   * [gRPC-Web](#grpc-web)
@@ -232,6 +233,45 @@ $ easyrpc c example.package.Service.Method -d '{"msg":"test1"}{"msg":"test2"}{"m
 
 # It is possible to open an editor with pipes.
 $ easyrpc r example.package.Service.Method -e | jq
+```
+
+### Listing available RPCs
+
+Before invoking an RPC, you can list the methods available from the configured protobuf source.
+The command uses the same descriptor source options as `call` and `request`: local proto files,
+`--import-all`, server reflection, or the corresponding settings in a [configuration file](#configuration-files).
+
+```shell
+# List methods using server reflection
+$ easyrpc ls -a localhost:12345 -r
+example.package.Service.Method
+example.package.Service.OtherMethod
+```
+
+You can also use the `--package` and `--service` flags to narrow down the output the same way as
+with [autocompletion](#autocompletion). Matching parts are omitted from the printed names.
+
+```shell
+# Limit output to a specific service
+$ easyrpc list -a localhost:12345 -r --package example.package --service Service
+Method
+OtherMethod
+```
+
+The `list` output is handy for integration with external fuzzy finders. For example, with `fzf`
+in Zsh you can define a custom completion widget for `easyrpc call` and `easyrpc request`:
+
+```shell
+_fzf_complete_easyrpc() {
+    local -a tokens
+    tokens=(${(z)1})
+    case "${tokens[-1]}" in
+        call|c|request|r)
+            _fzf_complete --reverse --no-preview -- "$@" < <(easyrpc ls) ;;
+        *)
+            _fzf_path_completion "$prefix" "$1" ;;
+    esac
+}
 ```
 
 ### Autocompletion

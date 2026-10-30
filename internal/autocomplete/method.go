@@ -44,35 +44,12 @@ func (c *ProtoComp) CompleteMethod(
 	}
 
 	methods, err := c.symbols(cmd.Context(), &cfg, toComplete, func(fqmn fqn.FQMN) string {
-		b := fqmn.PartsBuilder()
-
-		// If package name has been set, and doesn't match
-		// the received one, filter the method out.
-		// If they match, omit the package name from the result.
-		// Otherwise, if the method contains a package name, use it
-		// to form a fully qualified name.
-		// WithPackage call also forces service name to be included for correctness.
-		if cfg.Request.Package != "" {
-			if fqmn.PackageName != cfg.Request.Package {
-				return ""
-			}
-		} else if fqmn.PackageName != "" {
-			b.WithPackage()
+		s, ok := fqmn.FilterAndFormat(cfg.Request.Package, cfg.Request.Service)
+		if !ok {
+			return ""
 		}
 
-		// If service name has been set, and doesn't match
-		// the received one, filter the method out.
-		// If they match, omit the service name from the result.
-		// Otherwise, use it to form a fully qualified name.
-		if cfg.Request.Service != "" {
-			if fqmn.Service != cfg.Request.Service {
-				return ""
-			}
-		} else {
-			b.WithService()
-		}
-
-		return b.String()
+		return s
 	})
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError

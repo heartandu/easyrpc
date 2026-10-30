@@ -133,6 +133,7 @@ func (a *App) registerCommands() {
 	a.registerVersionCmd()
 	a.registerCallCmd()
 	a.registerRequestCmd()
+	a.registerListCmd()
 	a.registerConfigCmd()
 }
 
