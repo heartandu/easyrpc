@@ -22,3 +22,8 @@
 - Comprehensive linting with most rules enabled except: depguard, exhaustruct, funcorder, ireturn, mnd, noinlineerr, varnamelen, wsl
 - Cognitive complexity limit: 20
 - Test files have relaxed rules for dupl, err113, errcheck, forcetypeassert, funlen, gocyclo, gosec, lll, revive, varnamelen, wrapcheck
+
+## Commit messages
+- Commit messages use conventional commits format
+- The scope for the conventional commit is optional
+- There should be as little as possible details in the commit message body
